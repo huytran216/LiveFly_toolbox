@@ -1,0 +1,33 @@
+1. "id" label of the nuclus 
+2. "frame" time at which the nucleus is present 
+3. "x" x position
+4. "y" y postition
+5. "raduis" raidus of the segmented nucleus
+6. "ecc" eccentricity
+7. "angle" angle
+8. "clone" = "id"
+9. "mother_id" id of its mother (nothing for first cycle)
+10. "daug1_id" id of its daughter 1
+11. "daug2_id" id of its daughter 2
+12. "cycle" actual cycle 
+13. "dt" time resolution in second
+14. "Lx" size of the imaging field x in pixel
+15. "Ly" size of the imaging field y in pixel
+16. "shift_L" The part of the embryo we miss anterior pole
+17. "shift_R" The part of the embryo we miss posterior pole
+18. "th" theshold used for spot detection
+19. "A_pole" if A pole is left then =1 
+20. "x_spot1" x position for the spot
+21. "y_spot1" y position for the spot
+22. "z_spot1" z position for the spot
+23. "voxels_spot1" amount of pixel 3D (voxels)
+24. "Int_spot1" sum of the intensity of the pixel 3D
+25. "Amp_spot1" measure of the intensity of the spot by gaussian fitting : amplitude
+26. "sigx_spot1" measure of the intensity of the spot by gaussian fitting : sigma x
+27. "sigy_spot1" measure of the intensity of the spot by gaussian fitting : sigma y
+28. "Int2d_spot1" measure of the intensity of the spot by gaussian fitting : amplitude x
+sig_ x x sig_y
+29. "bkg_spot1" measure of the intensity of the spot by gaussian fitting : estimated
+background
+30. "residuals_spot1") measure of the intensity of the spot by gaussian fitting :
+quality of the fit ??
