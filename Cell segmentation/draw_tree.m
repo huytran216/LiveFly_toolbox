@@ -14,7 +14,7 @@ function draw_tree(tree_parent,tree_time,cc)
     plot3(x,y,z,'o');
     set (gca,'Ydir','reverse');
     ylabel('<< frame <<');
-    title('Cell lineage');
+    title('Lineage tree');
     dcm_obj = datacursormode(figure(gcf));
     set(dcm_obj,'UpdateFcn',@myupdatefcn);
     % Draw the cell cycle:

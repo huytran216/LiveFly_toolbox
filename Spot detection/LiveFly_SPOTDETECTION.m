@@ -12,8 +12,8 @@ nuclei_mov='RED.tif';                    %title of segmented nuclei movie (no ex
 seg_init = 1;
 seg_end  = 471;
 %select the frame range you want to analyze
-it_start=1;
-it_end=471;
+it_start=120;
+it_end=120;
 %% Parameters:
 ConfigName=0;
 if strcmp(questdlg('Choose a configuration file?'),'Yes')
@@ -34,7 +34,7 @@ else
     % IMPORTANT PARAMETERES FOR SPOT DETECTION %% 
     th1=37;                 % Minimal threshold for spot detection, set to 0 for debug mode
     th2=22;                 % Minimal threshold for median filter, set to 0 for debug mode
-    th=[th1 th2];
+    th=[0 th2];
     % Spot detection parameters:
     averaging_radius=3;     % there is an average filter for the images. averaging_radius=1 means no average. About the spot size
     voxels_min=9;          % minimal number of voxels for a spot

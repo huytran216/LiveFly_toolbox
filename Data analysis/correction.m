@@ -1,8 +1,10 @@
 % Delimiter for the result file (default=' ')
 delimiter=' ';
-% Image size: X is WiDTH; Y IS HEIGHT
+
+% 3D Image size: X is WIDTH; Y IS HEIGHT
 xlen=0;
 ylen=0;
+
 % Cropping the frame: nuclei outside this frame will not be considered.
 xlim_left=0;
 xlim_right=0;
@@ -22,16 +24,15 @@ rm={};
 range1=1:10001;filename1='Result_file1';
 range2=10002:30000;filename2='Result_file2';
 
-%Cycle 13 is screwed up with agregates. We can manually add border position
+%Cycle 13 maybe screwed up with agregates. We can manually add border position
 %and see which nuclei can be kept.
 border13=10000;
 keepid13=[];
 
-% Is the movie right or left censored, censored or not
-% This variable is set to zero if the movie begin or end with mitosis.
-% Equal 1 if otherwise. The program will try to salvage some nuclei cycle
-% data from estimating the nuclei cycle duration
-% Better left 0 for now.
+% Is the movie right or left censored, right censored or not?
+% These variable are set to zero if the movie begin or end with mitosis.
+% They are set to 1 if otherwise. 
+% Default: 0
 leftcensored=0;
 rightcensored=0;
 

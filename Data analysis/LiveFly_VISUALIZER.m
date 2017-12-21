@@ -547,6 +547,7 @@ set(segfigure,'Visible','on');
         f=waitbar(0,'Loading');
         if Nmov
             for i=1:Nmov
+                waitbar((i-1)/Nmov,f);
                 Update_DatasetList(Nmov);
             end
             [datamat,DatasetList]=local_extract(DatasetList);
@@ -627,6 +628,9 @@ set(segfigure,'Visible','on');
                             xlim(AP);
                             if cnt==1
                                 title([DatasetList(crrrow).Name]);
+                            end
+                            if cnt<numel(new_nc_range)
+                                set(gca,'XTick',[]);
                             end
                             subplot(numel(new_nc_range),2,2*cnt);
                             plot(allx(:),allf(:),'x');
@@ -823,7 +827,7 @@ set(segfigure,'Visible','on');
                                 sf(cnt3)=sqrt(var(allf(tmp)));
                             end
                             errorbar(pos_range,mf,sf,'k');
-                            leg{cnt+1}='Mean';
+                            leg{cnt2+1}='Mean';
                         end
                         if showoption_plot(6)   % Show individual mean curves
                             hold on;
