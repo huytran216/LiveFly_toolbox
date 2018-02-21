@@ -26,7 +26,7 @@ Load and analyze movies!
 
 You can download a movie sample from: http://xfer.curie.fr/get/CDi5UvAjJZW/RAWMovie.tif (File size: 7.4 Gb)
 
-The information on the movie can be found in: http://xfer.curie.fr/get/h0lfSn26E7y/Movie%20information.txt(File size: 1 kb)
+The information on the movie can be found in: http://xfer.curie.fr/get/h0lfSn26E7y/Movie%20information.txt (File size: 1 kb)
 
 ## Getting started
 
