@@ -9,7 +9,7 @@ The toolbox, which is tailored for the context of Drosophila early development, 
 ## System requirements
 
 1. MATLAB 2013 or above, with the Image Processing Toolbox
-2. Bioformat package for MATLAB: version 5.2.1 or higher.
+2. Bioformat's MATLAB toolbox: version 5.2.1 or higher, download from: https://downloads.openmicroscopy.org/bio-formats/5.4.1/
 3. The LiveFly toolbox: available for download from: https://github.com/huytran216/LiveFly_toolbox
 
 ## Getting started
