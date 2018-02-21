@@ -5,7 +5,6 @@ clc;       %reset the writing space
 addpath('..\Tool\bfmatlab\');
 %%  LOAD THE MULTI-TIFF FILE FOR THE NUP CHANNEL
 mov_folder='C:\Matlab\Test\';                       %indicate the full path movies file
-mov_folder='..\Test\';                       %indicate the full path movies file
 main_mov='RAWMovie.tif';                            %title of ensemble movie (with extension)
 nuclei_mov='RED';                                   %title of segmented nuclei movie (with/without extension)
 
