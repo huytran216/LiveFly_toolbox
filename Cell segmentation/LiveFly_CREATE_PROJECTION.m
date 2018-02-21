@@ -1,13 +1,13 @@
 addpath('..\Tool\bfmatlab\');
 
 %% Input folder
-folder='D:\Huy todo\270517_2\';
-mov_in='C6HisRFPMCPnoNLS1.czi';    % Original movie
-mov_out='RED';                 % Maximum projection movie [NO EXTENSION]
+folder='C:\Matlab\Test\';     % Original movie filder
+mov_in='RAWMovie.tif';              % Original movie name with extension
+mov_out='RED';                      % Maximum projection movie [NO EXTENSION]
 
 % Additional parameters
 channel=1;               % Channel for Nuclei image (0 or 1)
-n_frame=[1:320];         % Range of frame to be analyzed
+n_frame=[1:220];         % Range of frame to be analyzed
 fsize=2;                 % Size of the filter before creating maximum projection, should be small (~1 or 2) for nc14.
 quantile_threshold=[0.5];% Quantile 
 max_projection=5;        % number of maximum layer for the projection - approximating half size of a nuclei in z stack
@@ -27,7 +27,7 @@ tform_rec=cell(1,max(n_frame));    % Storage for transformation
 I=[];
 for frame=n_frame
     display(frame)
-    if frame==n_frame(1);
+    if frame==n_frame(1)
         writemode='overwrite';
     else
         writemode='append';
@@ -54,7 +54,7 @@ for frame=n_frame
         Iout=max(I,[],3);
         % Save projection
         Iout=uint8(Iout);
-        imwrite(Iout,[folder mov_out '.tif'],'WriteMode',writemode);
+        imwrite(Iout,fullfile(folder,[mov_out '.tif']),'WriteMode',writemode);
     % Calculate alignment:
         tform_rec{frame}=[];
         Iout=imadjust(imresize(Iout,alignratio));
@@ -95,4 +95,4 @@ for frame=n_frame
         end
         Ipre=Iout;
 end
-save([folder mov_out '_align.mat'],'tform_rec','alignratio','-v7.3');
+save(fullfile(folder,[mov_out '_align.mat']),'tform_rec','alignratio','-v7.3');

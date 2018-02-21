@@ -4,16 +4,17 @@ warning off;
 clc;       %reset the writing space
 addpath('..\Tool\bfmatlab\');
 %%  LOAD THE MULTI-TIFF FILE FOR THE NUP CHANNEL
-mov_folder='C:\Users\Huy_lpt\Desktop\todo\081116\';               %indicate the full path movies file
-main_mov='Bcd6MS2-His-01.czi';       %title of ensemble movie (with extension)
-nuclei_mov='RED.tif';                    %title of segmented nuclei movie (no extension)
+mov_folder='C:\Matlab\Test\';                       %indicate the full path movies file
+mov_folder='..\Test\';                       %indicate the full path movies file
+main_mov='RAWMovie.tif';                            %title of ensemble movie (with extension)
+nuclei_mov='RED';                                   %title of segmented nuclei movie (with/without extension)
 
 %frame for segmentation file
 seg_init = 1;
-seg_end  = 471;
+seg_end  = 220;
 %select the frame range you want to analyze
-it_start=120;
-it_end=120;
+it_start=1;
+it_end=220;
 %% Parameters:
 ConfigName=0;
 if strcmp(questdlg('Choose a configuration file?'),'Yes')
@@ -23,18 +24,18 @@ else
     % --------MODIFY THE PARAMETERS HERE----------
     
     % Movie frame and resolution parameters
-    shift_left=518;         % Length of the cat portion on the left
-    shift_right=646;        % Length of the cat portion on the right
-    dt=12.6;                % Time step in seconds that you read from the metafile
+    shift_left=786;         % Length of the cat portion on the left
+    shift_right=805;        % Length of the cat portion on the right
+    dt=14.73;                % Time step in seconds that you read from the metafile
     A_pole=1;               % Anterior pole position 1=left
     channel=0;              % Channel for Nuclei image (0 or 1)
     x_resolution=0.171;     % Pixel size (micron/pixels) on XY axis (optional)
     z_resolution=0.5;       % Pixel size (micron/pixels) on Z axis
 
     % IMPORTANT PARAMETERES FOR SPOT DETECTION %% 
-    th1=37;                 % Minimal threshold for spot detection, set to 0 for debug mode
-    th2=22;                 % Minimal threshold for median filter, set to 0 for debug mode
-    th=[0 th2];
+    th1=57;                 % Minimal threshold for spot detection, set to 0 for debug mode
+    th2=29;                 % Minimal threshold for median filter, set to 0 for debug mode
+    th=[th1 th2];
     % Spot detection parameters:
     averaging_radius=3;     % there is an average filter for the images. averaging_radius=1 means no average. About the spot size
     voxels_min=9;          % minimal number of voxels for a spot
@@ -43,7 +44,7 @@ else
 end
 
 %% Brightness adjustment after spot detection
-brightness_ratio=[1.5 1.5]; % Amplify the (1) green and (2) red intensity for better visualization
+brightness_ratio=[1.2 1.2]; % Amplify the (1) green and (2) red intensity for better visualization
 %% Load basic information on movies
 [~,nuclei_mov,~] = fileparts(nuclei_mov);
 ms2_mov = [mov_folder main_mov];
@@ -214,9 +215,8 @@ for ir=1:size(nuc.frames,1)
                         %fprintf(1,'%g ',infos_spot_nuc(id,it,i,j));
                         fprintf(fp,'%g ',infos_spot_nuc(id,it,i,j));
                     end
-                    fprintf(1,'%g ',infos_spot_nuc(id,it,5,j));
                 end                
-                fprintf(1,'\n');
+                %fprintf(1,'\n');
                 fprintf(fp,'\n');
             %end
         end

@@ -12,6 +12,12 @@ The toolbox, which is tailored for the context of Drosophila early development, 
 2. Bioformat package for MATLAB: version 5.2.1 or higher.
 3. The LiveFly toolbox: available for download from: https://github.com/huytran216/LiveFly_toolbox
 
+## Getting started
+
+Extract the LiveFly_toolbox. Extract the Bioformat package for MATLAB (bfmatlab folder) into the LiveFly's Tool folder.
+
+Load and analyze movies!
+
 ## Input
 
 1.	A time-lapse 3D movie captured with a confocal microscope. The compatible file formats are .czi or .lsm commonly used in time-lapse microscopy. The movie has two channels: one for the nuclei markers and one for MCP-GFP/PP7 proteins.
@@ -20,12 +26,12 @@ The toolbox, which is tailored for the context of Drosophila early development, 
 
 You can download a movie sample from: http://xfer.curie.fr/get/CDi5UvAjJZW/RAWMovie.tif (File size: 7.4 Gb)
 
-The information on the movie can be found in: http://xfer.curie.fr/get/t5KwEYFFvrh/Movie%20information.txt (File size: 1 kb)
+The information on the movie can be found in: http://xfer.curie.fr/get/h0lfSn26E7y/Movie%20information.txt(File size: 1 kb)
 
 ## Getting started
 
 The toolbox has three modules:
-1. The Nuclei segmentation module extracts from the 3D movie’s nuclei channel (marked by either fluorescent histones or NUP) the temporal position and lineage of each nucleus.
+1. The Nuclei segmentation module extracts from the 3D movie's nuclei channel (marked by either fluorescent histones or NUP) the temporal position and lineage of each nucleus.
 2. The Spot detection module extracts the intensity trace of active transcription loci in each nucleus.
 3. The Visualizer module allows users to manage the data from multiple movies and to visualize the pattern of several features of the transcription dynamics.
 
