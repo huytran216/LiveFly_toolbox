@@ -1012,7 +1012,7 @@ function segment_findcircle(~,~)
                 draw_tree(tree_parent,tree_time,nuc.cycle(1,:));
             end
        catch
-            msgbox('Complete tracking first');
+            msgbox('Input Error/Complete tracking first');
        end
     end
     
@@ -1044,7 +1044,7 @@ function segment_findcircle(~,~)
             end
             save(trackfile,'nuc','BWL','nc_info','-v7.3');
        catch
-            msgbox('Input Error/Incomplete tracking first');
+            msgbox('Input Error/Complete tracking first');
        end
     end
 %% Auxiliary functions

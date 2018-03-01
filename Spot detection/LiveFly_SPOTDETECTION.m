@@ -4,7 +4,7 @@ warning off;
 clc;       %reset the writing space
 addpath('..\Tool\bfmatlab\');
 %%  LOAD THE MULTI-TIFF FILE FOR THE NUP CHANNEL
-mov_folder='C:\Matlab\Test\';                       %indicate the full path movies file
+mov_folder='D:\Matlab\HUY TESTBOX FOR LIVEFLY\Test';                       %indicate the full path movies file
 main_mov='RAWMovie.tif';                            %title of ensemble movie (with extension)
 nuclei_mov='RED';                                   %title of segmented nuclei movie (with/without extension)
 
@@ -41,13 +41,19 @@ else
     voxels_max=60;          % Maximum number of voxels for a spot
     fact_r=1.2;             % tolerance radius (if fact_r=1) the distance is equal to the radius. fact_r for histone is generally bigger than 1.
 end
-
+%% Ask some question about debug mode
+if strcmp(questdlg('Enter debug mode to find th1, th2?'),'Yes')
+    th=[0 0];
+    answer=inputdlg('Enter a frame number with spots');
+    it_start=str2double(answer);
+    it_end=it_start;
+end
 %% Brightness adjustment after spot detection
 brightness_ratio=[1.2 1.2]; % Amplify the (1) green and (2) red intensity for better visualization
 %% Load basic information on movies
 [~,nuclei_mov,~] = fileparts(nuclei_mov);
-ms2_mov = [mov_folder main_mov];
-seg_mov = [mov_folder nuclei_mov];
+ms2_mov = fullfile(mov_folder,main_mov);
+seg_mov = fullfile(mov_folder,nuclei_mov);
 
 I=imread([seg_mov '.tif'],1);         %read the frame 1
 
@@ -224,10 +230,12 @@ end
 fclose(fp);
 %% Choose the config file:
 if ~ConfigName
-    A={};   % Create introduction cell
-    A_{1}=['Config file created on ' date];
-    A_{2}='THIS IS THE CONFIGURATION FILE FOR SPOT DETECTION PROGRAM: ';
-    A_{3}='If you need to reanalyze the data, change the params here';
-    A_{4}='Then rerun the Spot detection with this file loaded';
-    matlab.io.saveVariablesToScript(configname,{'A_','main_mov','nuclei_mov','shift_left','shift_right','dt','A_pole','channel','x_resolution','z_resolution','th1','th2','th','averaging_radius','voxels_min','voxels_max','fact_r'});
+    if (th(1)>0)&&(th(2)>0)
+        A={};   % Create introduction cell
+        A_{1}=['Config file created on ' date];
+        A_{2}='THIS IS THE CONFIGURATION FILE FOR SPOT DETECTION PROGRAM: ';
+        A_{3}='If you need to reanalyze the data, change the params here';
+        A_{4}='Then rerun the Spot detection with this file loaded';
+        matlab.io.saveVariablesToScript(configname,{'A_','main_mov','nuclei_mov','shift_left','shift_right','dt','A_pole','channel','x_resolution','z_resolution','th1','th2','th','averaging_radius','voxels_min','voxels_max','fact_r'});
+    end
 end

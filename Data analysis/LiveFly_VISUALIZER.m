@@ -12,6 +12,7 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};Nfea=15;
+feature_unit={};
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -622,28 +623,39 @@ set(segfigure,'Visible','on');
                             allx=DatasetFeature(new_nc_range(cnt)).xaxis_all{fea,crrrow};
                             ally=DatasetFeature(new_nc_range(cnt)).yaxis_all{fea,crrrow};
                             allf=DatasetFeature(new_nc_range(cnt)).fearec_all{fea,crrrow};
+                            if strcmp(feature_unit{fea},'%')
+                                allf=allf*100;
+                                ratio=100;
+                            else
+                                ratio=1;
+                            end
                             h=scatter(allx(:),ally(:),0*allf(:)+20,allf(:),'filled');
+                            colorbar
                             set(h,'MarkerEdgeColor','k');
                             ylabel(['nc' num2str(nc_range(new_nc_range(cnt)))]);
                             xlim(AP);
                             if cnt==1
-                                title([DatasetList(crrrow).Name]);
+                                title(DatasetList(crrrow).Name,'interpreter','none');
                             end
                             if cnt<numel(new_nc_range)
                                 set(gca,'XTick',[]);
+                            else
+                                xlabel('AP axis (%)');
                             end
                             subplot(numel(new_nc_range),2,2*cnt);
-                            plot(allx(:),allf(:),'x');
+                            plot(allx,allf,'x');
                             xlim(AP);
                             if cnt==1
-                                title(feature_label{fea});
+                                title([feature_label{fea} ' (' feature_unit{fea} ')']);
                             end
                             if cnt<numel(new_nc_range)
                                 set(gca,'XTick',[]);
+                            else
+                                xlabel('AP axis (%)');
                             end
                             if showoption_plot(2)
                                 hold on;
-                                plot([AP(1):AP(2)],2*DatasetFeature(new_nc_range(cnt)).vborder_rec(fea,crrrow)*sigmf([AP(1):AP(2)],[ -DatasetFeature(new_nc_range(cnt)).hborder_rec(fea,crrrow)*0.04 DatasetFeature(new_nc_range(cnt)).xborder_rec(fea,crrrow)]),'--k');
+                                plot([AP(1):AP(2)],ratio*2*DatasetFeature(new_nc_range(cnt)).vborder_rec(fea,crrrow)*sigmf([AP(1):AP(2)],[ -DatasetFeature(new_nc_range(cnt)).hborder_rec(fea,crrrow)*0.04 DatasetFeature(new_nc_range(cnt)).xborder_rec(fea,crrrow)]),'--k');
                             end
                             % Adjust the axis
                             ytmp=get(gca,'ylim');
@@ -653,7 +665,7 @@ set(segfigure,'Visible','on');
                         for cnt=1:numel(new_nc_range)
                             subplot(numel(new_nc_range),2,2*cnt);
                             ylim([ymin-0.2*(ymax-ymin) ymax+0.2*(ymax-ymin)]);
-                        end
+                        end                        
                         tightfig;
                     end
                 end
@@ -719,6 +731,11 @@ set(segfigure,'Visible','on');
                     ymin=zeros(1,15);ymax=zeros(1,15);
                     for tsidx=ts_spec
                         for feaidx=fea_plot(:)'
+                            if strcmp(feature_unit{feaidx},'%')
+                                    ratio=100;
+                                else
+                                    ratio=1;
+                                end
                             if numel(DatasetFeature(cnt0).fearec_all{feaidx,tsidx})
                                 cnt=cnt+1;
                                 % Check for border position if needed
@@ -729,17 +746,17 @@ set(segfigure,'Visible','on');
                                 end
                                 % Begin plotting
                                 subplot(numel(ts_spec),numel(fea_plot),cnt)
-                                plot(DatasetFeature(cnt0).xaxis_all{feaidx,tsidx}-xborder,DatasetFeature(cnt0).fearec_all{feaidx,tsidx},'.b');hold on;
+                                plot(DatasetFeature(cnt0).xaxis_all{feaidx,tsidx}-xborder,ratio*DatasetFeature(cnt0).fearec_all{feaidx,tsidx},'.b');hold on;
                                 tmpx=[AP(1):AP(2)];
                                 % Show fitted Hill curve if needed
                                 if showoption_plot(2)   % Show fitted Hill coefficient
-                                    plot(tmpx,2*DatasetFeature(cnt0).vborder_rec(feaidx,tsidx)*sigmf(tmpx,[ -DatasetFeature(cnt0).hborder_rec(feaidx,tsidx)*0.04 DatasetFeature(cnt0).xborder_rec(feaidx,tsidx)-xborder]),'--k');
+                                    plot(tmpx,ratio*2*DatasetFeature(cnt0).vborder_rec(feaidx,tsidx)*sigmf(tmpx,[ -DatasetFeature(cnt0).hborder_rec(feaidx,tsidx)*0.04 DatasetFeature(cnt0).xborder_rec(feaidx,tsidx)-xborder]),'--k');
                                 end
                                 % Set axis limit
                                 xlim(AP);
                                 yrange{feaidx}=[];
                                 if tsidx==ts_spec(1)
-                                    title(feature_label{feaidx});
+                                    title([feature_label{feaidx} ' (' feature_unit{feaidx} ')']);
                                 end
                                 if tsidx~=ts_spec(end)
                                     set(gca,'XTick',[]);
@@ -782,6 +799,11 @@ set(segfigure,'Visible','on');
                     figure('Name',['Dataset: ' DatasetName '. nc' num2str(cycleno) ]);
                     
                     for fea=fea_plot(:)'
+                        if strcmp(feature_unit{fea},'%')
+                            ratio=100;
+                        else
+                            ratio=1;
+                        end
                         cnt1=cnt1+1;
                         subplot(numel(fea_plot),1,cnt1);
                         % Put some alignment here
@@ -804,13 +826,13 @@ set(segfigure,'Visible','on');
                         if showoption_plot(3)   % Seperate embryo by color
                             for tsidx=ts_spec
                                 cnt2=cnt2+1;
-                                plot(allx_{cnt2},allf_{cnt2}, ...
+                                plot(allx_{cnt2},ratio*allf_{cnt2}, ...
                                         'Marker','.','color',defcolor(tsidx,:),'LineStyle','none'); hold on;
                                 leg{cnt2}=['embryo ' num2str(tsidx)];
                             end
                         else
                             cnt2=cnt2+1;
-                            plot(allx,allf,...
+                            plot(allx,ratio*allf,...
                                 'Marker','.','LineStyle','none');
                             leg{cnt2}='data';
                         end
@@ -826,7 +848,7 @@ set(segfigure,'Visible','on');
                                 mf(cnt3)=mean(allf(tmp));
                                 sf(cnt3)=sqrt(var(allf(tmp)));
                             end
-                            errorbar(pos_range,mf,sf,'k');
+                            errorbar(pos_range,ratio*mf,ratio*sf,'k');
                             leg{cnt2+1}='Mean';
                         end
                         if showoption_plot(6)   % Show individual mean curves
@@ -849,7 +871,7 @@ set(segfigure,'Visible','on');
                                         sf(cnt3)=NaN;
                                     end
                                 end
-                                plot(pos_range,mf,'color',defcolor(tsidx,:));
+                                plot(pos_range,ratio*mf,'color',defcolor(tsidx,:));
                             end
                         end
                         if showoption_plot(4)   % Show legend

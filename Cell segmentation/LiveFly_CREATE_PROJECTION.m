@@ -1,13 +1,14 @@
 addpath('..\Tool\bfmatlab\');
 
 %% Input folder
-folder='C:\Matlab\Test\';     % Original movie filder
+folder='C:\Matlab\Test\';           % Original movie folder
 mov_in='RAWMovie.tif';              % Original movie name with extension
 mov_out='RED';                      % Maximum projection movie [NO EXTENSION]
 
-% Additional parameters
 channel=1;               % Channel for Nuclei image (0 or 1)
 n_frame=[1:220];         % Range of frame to be analyzed
+
+%% Parameters for 3D projection (generally unchanged)
 fsize=2;                 % Size of the filter before creating maximum projection, should be small (~1 or 2) for nc14.
 quantile_threshold=[0.5];% Quantile 
 max_projection=5;        % number of maximum layer for the projection - approximating half size of a nuclei in z stack

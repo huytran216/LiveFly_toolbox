@@ -17,17 +17,23 @@ function draw_tree(tree_parent,tree_time,cc)
     title('Lineage tree');
     dcm_obj = datacursormode(figure(gcf));
     set(dcm_obj,'UpdateFcn',@myupdatefcn);
-    % Draw the cell cycle:
+    % Draw the nuclear cycle:
     [cctype,~,pos]=unique(cc);
     newcolor=cell(numel(cctype),1);
     cchue=0;
-    for i=1:numel(cctype)
-        cchue=(cchue+0.87);
-        cchue=cchue-floor(cchue);
-        newcolor{i}=hsv2rgb([cchue 0.5 0.5]);
-    end
-    
-    for i=1:numel(cc)
-        plot3([1.0 1.1],[i i],[100 100],'color',newcolor{pos(i)},'LineWidth',3);
-    end
+        % Get a specific color
+        for i=1:numel(cctype)
+            cchue=(cchue+0.87);
+            cchue=cchue-floor(cchue);
+            newcolor{i}=hsv2rgb([cchue 0.5 0.5]);
+            % Add label on the nuclear cycle
+            if cctype(i)>0
+                draw_pt=find(cc==cctype(i),1,'first');
+                text(1,draw_pt+5,['nc' num2str(cctype(i))]);
+            end
+        end
+        % Draw the color strip
+        for i=1:numel(cc)
+            plot([1.1 1.2],[i i],'color',newcolor{pos(i)},'LineWidth',3);
+        end
 end

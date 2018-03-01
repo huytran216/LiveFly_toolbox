@@ -47,9 +47,11 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
         if any(th==0)
             ax1=subplot(3,2,1:2);
             imagesc(F);
+            colorbar;
             title(['Original image. z=' num2str(zs)]);
             ax2=subplot(3,2,3:4);
             imagesc(F_);
+            colorbar;
             title(['Filtered image. z=' num2str(zs)]);
             subplot(3,2,5);
             hist(F(:),0:double(max(F(:))));
