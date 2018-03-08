@@ -94,8 +94,9 @@ function [xhat,hhat,what,vhat] = detect_border_all(x,y,limit,isplot,fitoption)
         % Perform the fitting
         beta0=[-5+zeros(1,N) -1];
 
-        problem=opti('fun',@obj1,'ydata',0,'x0',beta0);
-        betahat=solve(problem);
+        %problem=opti('fun',@obj1,'ydata',0,'x0',beta0);
+        %betahat=solve(problem);
+        betahat=fminsearch(@obj1,zeros(1,N+1));
         betahat=[vborder_value(:);betahat(:)];
     else
         % If vborder is not known - make some educated guess
@@ -108,8 +109,9 @@ function [xhat,hhat,what,vhat] = detect_border_all(x,y,limit,isplot,fitoption)
         if (fitoption(1)==0)&&(fitoption(2)==1)
             % Perform the fitting
             beta0=[vborder_value -5+zeros(1,N) -1];
-            problem=opti('fun',@obj2,'ydata',0,'x0',beta0);
-            betahat=solve(problem);
+            %problem=opti('fun',@obj2,'ydata',0,'x0',beta0);
+            %betahat=solve(problem);
+            betahat=fminsearch(@obj2,zeros(1,2*N+1));
             % Converting to the output    
             vhat=betahat(1:N);
             xhat=betahat(N+(1:N));
@@ -120,8 +122,9 @@ function [xhat,hhat,what,vhat] = detect_border_all(x,y,limit,isplot,fitoption)
         if (fitoption(1)==1)&&(fitoption(2)==0)
             % Perform the fitting
             beta0=[mean(vborder_value) -5+zeros(1,N) -ones(1,N)];
-            problem=opti('fun',@obj3,'ydata',0,'x0',beta0);
-            betahat=solve(problem);
+            %problem=opti('fun',@obj3,'ydata',0,'x0',beta0);
+            %betahat=solve(problem);
+            betahat=fminsearch(@obj3,zeros(1,2*N+1));
             % Converting to the output    
             vhat=betahat(1)*ones(1,N);
             xhat=betahat(1+(1:N));
@@ -132,8 +135,9 @@ function [xhat,hhat,what,vhat] = detect_border_all(x,y,limit,isplot,fitoption)
         if (fitoption(1)==1)&&(fitoption(2)==1)
             % Perform the fitting
             beta0=[mean(vborder_value) -5+zeros(1,N) -1];
-            problem=opti('fun',@obj4,'ydata',0,'x0',beta0);
-            betahat=solve(problem);
+            %problem=opti('fun',@obj4,'ydata',0,'x0',beta0);
+            %betahat=solve(problem);
+            betahat=fminsearch(@obj4,zeros(1,2*N+1));
             % Converting to the output
             vhat=betahat(1)*ones(1,N);
             xhat=betahat(1+(1:N));
@@ -145,8 +149,9 @@ function [xhat,hhat,what,vhat] = detect_border_all(x,y,limit,isplot,fitoption)
             % Perform fitting separately
             for cnt=1:N
                 beta0=[vborder_value(cnt) -5 -1];
-                problem=opti('fun',@obj5,'ydata',0,'x0',beta0);
-                betahat=solve(problem);
+                %problem=opti('fun',@obj5,'ydata',0,'x0',beta0);
+                %betahat=solve(problem);
+                betahat=fminsearch(@obj5,zeros(1,2*N+1));
                 % Converting to the output
                 vhat(cnt)=betahat(1);
                 xhat(cnt)=betahat(2);
