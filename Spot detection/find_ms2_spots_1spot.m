@@ -27,16 +27,27 @@ Ispot=zeros(size(II,1),size(II,2));
 
 clear detected_spot;
 detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'A',[],'ssx',[],'ssy',[],'I2d',[],'bkg',[],'resid',[]);
-
-%% Try spot detection on the 3D
+%% Load all 3D image in the frame
+    Irec=zeros(Lx,Ly,z_max);
     for zs=1:z_max  %loop on z
         iPlane = reader.getIndex(zs-1, channel, it-1) + 1;
-        I = bfGetPlane(reader, iPlane);
+        Irec(:,:,zs) = bfGetPlane(reader, iPlane);
+    end
+    Imax=max(Irec,[],3);
+    h = fspecial('average', averaging_radius);
+    Imax=imfilter(Imax,h);
+    Imax=Imax-medfilt2(Imax, [averaging_radius*5 averaging_radius*5]);% Background intensity
+%% Try spot detection on the 3D
+    for zs=1:z_max  %loop on z
+        I = Irec(:,:,zs);
 
 
-        h = fspecial('average', averaging_radius);
         F=imfilter(I,h);
         
+        if exist('ax1','var')
+            xl=get(gca,'xlim');
+            yl=get(gca,'ylim');
+        end
 
         % Use a median filter
         Fbg=medfilt2(F, [averaging_radius*5 averaging_radius*5]);% Background intensity
@@ -53,19 +64,22 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
             imagesc(F_);
             colorbar;
             title(['Filtered image. z=' num2str(zs)]);
-            subplot(3,2,5);
-            hist(F(:),0:double(max(F(:))));
-            title('th1');
-            subplot(3,2,6);
-            hist(F_(:),0:double(max(F_(:))));
-            title('th2');
-            linkaxes([ax1,ax2],'xy');
+            ax3=subplot(3,2,5:6);
+            imagesc(Imax);
+            colorbar;
+            title('Maximum projection');
+            linkaxes([ax1,ax2,ax3],'xy');
+            if exist('yl','var')
+                xlim(xl);
+                ylim(yl);
+            end
             pause;
             I3(:,:,zs)=F*0;
         else
             I3(:,:,zs)=(F>th(1))&(F_>th(2));
         end
     end
+    clear Irec;
 %% Labeling the spot intensity
     L3D=bwlabeln(I3,8);                         % Label the spots 3D image
     loc3 = regionprops(L3D,'Area','Centroid');  % Extract the region property
