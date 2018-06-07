@@ -1,4 +1,4 @@
-function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG]=extract_movie(fullpath,tinterphase,BG_man)
+function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG,ShiftL,ShiftR,APole]=extract_movie(fullpath,tinterphase,BG_man)
     % Extract the features (1:8) from the time series
     % Input:
     %    % datamat: input matrix or path to data file
@@ -68,6 +68,10 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     clear datamat1 datamat2;
     % Find the time resolution
     dt=datamat(1,13);
+    % Find ShiftL, ShiftR, APole
+    ShiftL=datamat(1,16);
+    ShiftR=datamat(1,17);
+    APole=datamat(1,19);
     % Extract the background intensity from gaussian fit
     BG=datamat(:,29);
     [BG,ax]=hist(BG(BG>0),20);
@@ -85,7 +89,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         for xpos=xpos_range
             datamat(:,xpos)=xlen-datamat(:,xpos)+1;
         end
-        % Flip Shift_R and Shift_R
+        % Flip Shift_L and Shift_R
         tmp=datamat(:,16);
         datamat(:,16)=datamat(:,17);
         datamat(:,17)=tmp;
@@ -227,8 +231,9 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         else
             censored(i)=-1;        % Cell does not exist
         end
-        % Extract the features:
-        [fearec{i},AdjustedIntensity{i},Adjustedtime{i}]=extract_feature(Irec{i},trec{i},0,dt,Imax,censored(i),tinterphase(cyclerec{i}-8)/dt);
+        % Extract the features - no trimming this time
+        threshold=0;
+        [fearec{i},AdjustedIntensity{i},Adjustedtime{i}]=extract_feature(Irec{i},trec{i},threshold,dt,Imax,censored(i));
         trec{i}=trec{i}*dt;
 %         % ALERT IF WEIRD FEATURES ARE DECTED
 %             % Early activating cell (most likely due to aggregrate)

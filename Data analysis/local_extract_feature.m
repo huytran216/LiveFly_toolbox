@@ -1,4 +1,4 @@
-function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xaxis_all,yaxis_all,fearec_all]=local_extract_feature(datamat,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
+function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all,yaxis_all,fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
 %% Define features to be extracted: Check feature_label.mat for reference
     fea_range=[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15];
 %% Initiating the feature storage
@@ -16,22 +16,34 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
     wborder_rec=[];         % Width of the border
     vborder_rec=[];         % Value of the feature at the border
     hborder_rec=[];         % Hill function for the border
+    xborder_CI=[]; % CI for xborder
+    hborder_CI=[]; % CI for hborder
+    wborder_CI=[]; % CI for wborder
+    vborder_CI=[]; % CI for vborder
+    
     fearec_all={};
     xaxis_all={};
     yaxis_all={};
     cnt=0;
     for feaidx=fea_range
         for tsidx=ts_spec
-            % Take cell id
-            idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));
-            % Take cell position and feature value
-            xaxis=[datamat(idselect).x]*100-50; % No embryo alignment yet
-            yaxis=[datamat(idselect).y]*100; % No embryo alignment yet
-            tmp=arrayfun(@(x) subindex(datamat(x).Feature,feaidx),idselect);
-            % Record all the features
-            fearec_all{feaidx,tsidx}=tmp(tmp>=0);
-            xaxis_all{feaidx,tsidx}=xaxis(tmp>=0);
-            yaxis_all{feaidx,tsidx}=yaxis(tmp>=0);
+            % Take mean curves
+                mxaxis_all{feaidx,tsidx}=AP(1):AP(2);
+                mfearec_all{feaidx,tsidx}=mf_indi{feaidx,cycleno,tsidx};
+                tmp=isnan(mf_indi{feaidx,cycleno,tsidx});
+                mxaxis_all{feaidx,tsidx}=mxaxis_all{feaidx,tsidx}(~tmp);
+                mfearec_all{feaidx,tsidx}=mfearec_all{feaidx,tsidx}(~tmp);
+            % Take individual time point    
+                % Take cell id
+                idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));
+                % Take cell position and feature value
+                xaxis=[datamat(idselect).x]*100-50; % No embryo alignment yet
+                yaxis=[datamat(idselect).y]*100; % No embryo alignment yet
+                tmp=arrayfun(@(x) subindex(datamat(x).Feature,feaidx),idselect);
+                % Record all the features
+                fearec_all{feaidx,tsidx}=tmp(tmp>=0);
+                xaxis_all{feaidx,tsidx}=xaxis(tmp>=0);
+                yaxis_all{feaidx,tsidx}=yaxis(tmp>=0);
         end
         % 
         cnt=cnt+1;
@@ -41,12 +53,42 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
         % Find the border region by fitting with Hill function
         limit=0;
         if numel(xaxis_all)
-            [xborder,hborder,wborder,vborder]=detect_border_all(xaxis_all(feaidx,ts_spec),fearec_all(feaidx,ts_spec),limit,isplot,fitoption);
-            % Record the border information
-            xborder_rec(feaidx,ts_spec)=xborder';
-            hborder_rec(feaidx,ts_spec)=hborder';
-            wborder_rec(feaidx,ts_spec)=wborder';
-            vborder_rec(feaidx,ts_spec)=vborder';
+            fitoption_=fitoption;
+            if feaidx==1
+                fitoption_(1)=1;
+            end
+            if feaidx==10
+                % Find interphase duration
+                for ts=ts_spec
+                    % Default value
+                    xborder_rec(feaidx,ts)=1e10;
+                    hborder_rec(feaidx,ts)=1e10;
+                    wborder_rec(feaidx,ts)=0;
+                    vborder_rec(feaidx,ts)=mode(fearec_all{feaidx,ts})/2;
+                    % Default CI
+                    xborder_CI(feaidx,1:2)=[1e10 1e10];
+                    hborder_CI(feaidx,1:2)=[1e10 1e10];
+                    wborder_CI(feaidx,1:2)=[0 0];
+                    vborder_CI(feaidx,1:2)=ones(1,2)*mode(fearec_all{feaidx,ts})/2;
+                end                
+            else
+                erroroption_=[1 1 1 1];
+                if ~fitoption(4)
+                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(xaxis_all(feaidx,ts_spec),fearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_);
+                else
+                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(mxaxis_all(feaidx,ts_spec),mfearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_);
+                end
+                % Record the border information
+                xborder_rec(feaidx,ts_spec)=xborder';
+                hborder_rec(feaidx,ts_spec)=hborder';
+                wborder_rec(feaidx,ts_spec)=wborder';
+                vborder_rec(feaidx,ts_spec)=vborder';
+                % Record the CI
+                xborder_CI(feaidx,1:2)=CIxborder;
+                hborder_CI(feaidx,1:2)=CIhborder;
+                wborder_CI(feaidx,1:2)=CIwborder;
+                vborder_CI(feaidx,1:2)=CIvborder;
+            end            
         end
     end
  %% Save the data with normalized feature values:

@@ -2,7 +2,7 @@
 2. "frame" time at which the nucleus is present 
 3. "x" x position
 4. "y" y postition
-5. "raduis" raidus of the segmented nucleus
+5. "radius" raidus of the segmented nucleus
 6. "ecc" eccentricity
 7. "angle" angle
 8. "clone" = "id"

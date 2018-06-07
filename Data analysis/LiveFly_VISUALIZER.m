@@ -1,4 +1,4 @@
-function GETDATA
+function LiveFly_VISUALIZER
 debug=1;
 %% Author
 % Huy Tran
@@ -11,8 +11,8 @@ figX2 = 1200;
 figY1 = 0;
 figY2 = 700;
 
-feature_label={};Nfea=15;
-feature_unit={};
+feature_label={};feature_unit={};
+Nfea=15;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -23,7 +23,8 @@ load('feature_label.mat');
 % Storage movie list
     emptystruct=orderfields(struct('tscnt',[],'Path','','Name','','correction',false, ...
         'nc9',false,'nc10',false,'nc11',false,'nc12',false,'nc13',false,'nc14',false, ...
-        'nc_ref',0,'Nf',0,'dt',0,'Lx',0,'Ly',0,'BG',1,'BG_man',1 ...
+        'nc_ref',0,'Nf',0,'dt',0,'Lx',0,'Ly',0,'BG',1,'BG_man',1,...
+        'ShiftL',0,'ShiftR',0,'APole',1 ...
         ));
     DatasetList = emptystruct;
 % Storage ensemble dataset
@@ -31,6 +32,21 @@ load('feature_label.mat');
 
 % Storage for extracted features
     DatasetFeature=struct('idrec',[],'tsrec',[],'xrec',[],'yrec',[],'fearec',{},'xborder_rec',[],'hborder_rec',[],'wborder_rec',[],'vborder_rec',[],'xaxis_all',[],'yaxis_all',[],'fearec_all',{});
+
+% Record for the heatmap
+    heatmapI=struct;   % Heat map with absolute time (unscaled interphase)
+    
+% Record the mean curves for merged embryos {feature x cycle} x [position]
+    mf_rec={};  % Mean curve
+    sf_rec={};  % Standard deviation
+    nf_rec={};  % Number of nuclei
+    ef_rec={};  % Number of embryo
+    
+% Record the mean curves for individual embryos {feature x cycle x embryo} x [position]
+    mf_indi={};  % Mean curve
+    sf_indi={};  % Standard deviation
+    nf_indi={};  % Number of nuclei
+
 % Cell cycle range:
     nc_range=[9:14];                                % Valid nuclear cycle
     fea_ref=0;                                      % Reference feature for embryo alignment
@@ -170,10 +186,12 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
 
 % Fit option: Option when fitting with a Hill/Sigmoid function
     fitoption_Hill=logical([0 ...                           % 1: if sharing maximum level
-        1 ...                                       % 1: if sharing Hill coefficient
+        1 ...                                               % 1: if sharing Hill coefficient
+        0 ...                                               % 1: if sharing border position
+        0 ...                                               % 1: if fit based on mean curves
         ]);
-    fitoption_Hill_text={'Similar maximum level', ...                      
-        'Similar Hill coeff'};                                        
+    fitoption_Hill_text={'Similar maximum level', ...
+        'Similar Hill coeff','Similar border','Fit mean curve'};
     hmessage_fitoption = uicontrol('Style','text','String','Hill fitting option:',...
         'Position',[950,650,200,30],'FontSize',10, 'HorizontalAlignment','left',...
         'ForegroundColor','white','BackgroundColor','black');
@@ -212,7 +230,10 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     hindi_traces = uicontrol('Style','pushbutton','String', 'Show Traces',...
         'Position',[850,410,100,30],'FontSize',8,...
         'Callback',@hindi_traces_Callback);
-
+    
+    hindi_info = uicontrol('Style','pushbutton','String', 'Show Info',...
+        'Position',[970,410,100,30],'FontSize',8,...
+        'Callback',@hindi_info_Callback);
 % Manipulate all movies
     hmessages_all = uicontrol('Style','text','String','Show all movie feature',...
         'Position',[730,330,200,30],'FontSize',10, 'HorizontalAlignment','left',...
@@ -233,7 +254,11 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     hall_table = uicontrol('Style','pushbutton','String', 'View fit table',...
         'Position',[1090,310,100,30],...
         'Callback',@hall_table_Callback);
-
+    
+    hall_Slide = uicontrol('Style','pushbutton','String', 'TimeMagnifier...',...
+        'Position',[730,270,100,30],...
+        'Callback',@hall_TimeMaginifier_Callback);
+    
 % Interested feature:
     hmessages_feature = uicontrol('Style','text','String','Interested feature:',...
         'Position',[730,230,200,30],'FontSize',10, 'HorizontalAlignment','left',...
@@ -261,7 +286,9 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
         'Show embryo legend',...
         'Show merged mean curve',...
         'Show indi mean curve',...
-        'Normalize feature',...
+        'Normalize fitted feature',...
+        'Normalize by intensity',...
+        'SError instead of SDev',...
         };
     showoption_plot={};
     for sthtmp=1:numel(showoption_list)
@@ -322,7 +349,8 @@ set(segfigure,'Visible','on');
                 DatasetName=FileName_;
                 DatasetPath=PathName_;
                 f=waitbar(0,'Loading');
-                load(fullfile(PathName_,FileName_),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill');
+                load(fullfile(PathName_,FileName_),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI');
+                fitoption_Hill(end+1:4)=0;
                 close(f);
                 % Patch DatasetList if some new field is missing
                 if ~isfield(DatasetList,'nc_ref')   % Reference feature
@@ -351,8 +379,12 @@ set(segfigure,'Visible','on');
                 DatasetList=orderfields(DatasetList);
                 Update_List();
             end
-        catch
-            msgbox('Error loading Dataset');
+        catch exception
+            if debug
+                throw(exception);
+            else
+                msgbox('Error loading Dataset');
+            end            
         end
     end
 
@@ -368,7 +400,7 @@ set(segfigure,'Visible','on');
         end
         if okwrite
             f=waitbar(0,'Saving');
-            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill');
+            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI');
             close(f);
         end
     end
@@ -566,12 +598,15 @@ set(segfigure,'Visible','on');
                 Outtext{i}=['nc' num2str(nc_range(i)) ' (min max) ' ];
                 Deftext{i}=[num2str(tinterphase_min(i)) ' ' num2str(tinterphase_max(i))];
             end
+            Outtext{i+1}='Automatic (1 for yes, 0 for no)';
+            Deftext{i+1}='1';
             dlg=inputdlg(Outtext,'Set the range for interphase duration (s)',[1 50],Deftext);
             for i=1:numel(nc_range)
                 tmp=str2num(dlg{i});
                 tinterphase_min(i)=tmp(1);
                 tinterphase_max(i)=tmp(2);
             end
+            tinterphase_min(i+1)=str2num(dlg{i+1});
             refine_tinterphase(tinterphase_min,tinterphase_max);
         else
             msgbox('Load movie first');
@@ -579,20 +614,45 @@ set(segfigure,'Visible','on');
     end
     
     function refine_tinterphase(tinterphase_min,tinterphase_max)
-        cnt=0;
-        for cycleno=nc_range
-            cnt=cnt+1;
-            idselect=find([datamat(:).cycle]==cycleno);
-            tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase_min(cnt));
-            tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase_max(cnt));
-            for i=[tmp1 tmp2]
-                datamat(i).Feature=-ones(1,numel(feature_label));
+        Re_Extract_feature();
+        % Restore the feature
+        for i=1:numel(datamat)
+            datamat(i).Feature=datamat(i).Feature_store;
+        end
+        % Clean interphase duration as usual from upper lower bounds
+            cnt=0;
+            for cycleno=nc_range
+                cnt=cnt+1;
+                idselect=find([datamat(:).cycle]==cycleno);
+                tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase_min(cnt));
+                tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase_max(cnt));
+                for i=[tmp1 tmp2]
+                    datamat(i).Feature=-ones(1,numel(feature_label));
+                end
+            end
+        if tinterphase_min(end)  
+            % Refine interphase automatically
+            cnt=0;
+            for cycleno=nc_range
+                cnt=cnt+1;
+                ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
+                for tsidx=ts_spec                    
+                    idselect=find(([datamat(:).cycle]==cycleno)&([datamat(:).tscnt]==tsidx));
+                    tmp=arrayfun(@(x) subindex(datamat(x).Feature,10),idselect);
+                    tinterphase=mode(tmp(tmp>0));
+                    tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase*0.80);
+                    tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase*1.20);
+                    for i=[tmp1 tmp2]
+                        datamat(i).Feature=-ones(1,numel(feature_label));
+                    end
+                end
             end
         end
     end
 
     function hextractfeature_Callback(~,~)
         f=waitbar(0,'Loading');
+        normalize_feature=0;
         if numel(datamat)
             cnt=0;
             for cycleno=nc_range
@@ -600,7 +660,8 @@ set(segfigure,'Visible','on');
                 ts_spec=arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov);
                 [DatasetFeature(cnt).idrec,DatasetFeature(cnt).tsrec,DatasetFeature(cnt).xrec,DatasetFeature(cnt).yrec,DatasetFeature(cnt).fearec,...
                     DatasetFeature(cnt).xborder_rec,DatasetFeature(cnt).hborder_rec,DatasetFeature(cnt).wborder_rec,DatasetFeature(cnt).vborder_rec,...
-                    DatasetFeature(cnt).xaxis_all,DatasetFeature(cnt).yaxis_all,DatasetFeature(cnt).fearec_all]=local_extract_feature(datamat,cycleno,find(ts_spec),0,feature_label,AP,fitoption_Hill);
+                    DatasetFeature(cnt).xborder_CI,DatasetFeature(cnt).hborder_CI,DatasetFeature(cnt).wborder_CI,DatasetFeature(cnt).vborder_CI,...
+                    DatasetFeature(cnt).xaxis_all,DatasetFeature(cnt).yaxis_all,DatasetFeature(cnt).fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,find(ts_spec),normalize_feature,feature_label,AP,fitoption_Hill);
             end
         end
         close(f);
@@ -609,7 +670,7 @@ set(segfigure,'Visible','on');
 %% Show stuffs from individual movies
     function hindi_feature_Callback(~,~)
         % Summarize selected movies
-        try
+%         try
             idx=crrrow;
             if idx
                 new_nc_range=find(arrayfun(@(x) getfield(DatasetList(crrrow),['nc' num2str(x)]),nc_range));
@@ -623,39 +684,28 @@ set(segfigure,'Visible','on');
                             allx=DatasetFeature(new_nc_range(cnt)).xaxis_all{fea,crrrow};
                             ally=DatasetFeature(new_nc_range(cnt)).yaxis_all{fea,crrrow};
                             allf=DatasetFeature(new_nc_range(cnt)).fearec_all{fea,crrrow};
-                            if strcmp(feature_unit{fea},'%')
-                                allf=allf*100;
-                                ratio=100;
-                            else
-                                ratio=1;
-                            end
                             h=scatter(allx(:),ally(:),0*allf(:)+20,allf(:),'filled');
-                            colorbar
                             set(h,'MarkerEdgeColor','k');
                             ylabel(['nc' num2str(nc_range(new_nc_range(cnt)))]);
                             xlim(AP);
                             if cnt==1
-                                title(DatasetList(crrrow).Name,'interpreter','none');
+                                title([DatasetList(crrrow).Name]);
                             end
                             if cnt<numel(new_nc_range)
                                 set(gca,'XTick',[]);
-                            else
-                                xlabel('AP axis (%)');
                             end
                             subplot(numel(new_nc_range),2,2*cnt);
-                            plot(allx,allf,'x');
+                            plot(allx(:),allf(:),'x');
                             xlim(AP);
                             if cnt==1
-                                title([feature_label{fea} ' (' feature_unit{fea} ')']);
+                                title(feature_label{fea});
                             end
                             if cnt<numel(new_nc_range)
                                 set(gca,'XTick',[]);
-                            else
-                                xlabel('AP axis (%)');
                             end
                             if showoption_plot(2)
                                 hold on;
-                                plot([AP(1):AP(2)],ratio*2*DatasetFeature(new_nc_range(cnt)).vborder_rec(fea,crrrow)*sigmf([AP(1):AP(2)],[ -DatasetFeature(new_nc_range(cnt)).hborder_rec(fea,crrrow)*0.04 DatasetFeature(new_nc_range(cnt)).xborder_rec(fea,crrrow)]),'--k');
+                                plot([AP(1):AP(2)],2*DatasetFeature(new_nc_range(cnt)).vborder_rec(fea,crrrow)*sigmf([AP(1):AP(2)],[ -DatasetFeature(new_nc_range(cnt)).hborder_rec(fea,crrrow)*0.04 DatasetFeature(new_nc_range(cnt)).xborder_rec(fea,crrrow)]),'--k');
                             end
                             % Adjust the axis
                             ytmp=get(gca,'ylim');
@@ -665,15 +715,18 @@ set(segfigure,'Visible','on');
                         for cnt=1:numel(new_nc_range)
                             subplot(numel(new_nc_range),2,2*cnt);
                             ylim([ymin-0.2*(ymax-ymin) ymax+0.2*(ymax-ymin)]);
-                        end                        
+                        end
                         tightfig;
                     end
                 end
-                                
             end
-        catch
-            msgbox('Error. Reanalyze the data');
-        end
+%         catch exception
+%             if debug
+%                 throw(exception)
+%             else
+%                 msgbox('Error. Reanalyze the data');
+%             end
+%         end
     end
     
     function hindi_traces_Callback(~,~)
@@ -693,29 +746,111 @@ set(segfigure,'Visible','on');
             if str2num(dlg{5})
                 idselect=idselect(arrayfun(@(x) subindex(datamat(x).Feature,4)>0.1,idselect));
             end
-            if numel(idselect)<=80
-                nrow=ceil(numel(idselect)/ncol);
-                figure('Name',['nc' num2str(cycleno)]);
-                xmax=0;xmin=0;  % Modifier for time limit (xlim)
-                for idx=1:numel(idselect)
-                    subplot(nrow,ncol,idx);
-                    ax=([datamat(idselect(idx)).Adjustedtime]-min(datamat(idselect(idx)).Adjustedtime)).*[datamat(idselect(idx)).dt];
-                    plot(ax,[datamat(idselect(idx)).AdjustedIntensity]);
-                    set(gca,'YTick',[]);
-                    set(gca,'XTick',[]);
-                    ylim([0 str2num(dlg{6})]);
-                    text(0,2000,{num2str(datamat(idselect(idx)).x*100-50,'%.1f')});
-                    xmax=max(xmax,max(ax));
-                    xmin=min(xmin,min(ax));
-                end
-                for idx=1:numel(idselect)
-                    subplot(nrow,ncol,idx);
-                    xlim([xmin xmax]);
-                end
-            else
+            if numel(idselect)>80
+                idselect=idselect(1:80);
                 msgbox(['Too more than 80 traces in cc' num2str(cycleno) '. Please narrow the criteria']);
             end
+            nrow=ceil(numel(idselect)/ncol);
+            figure('Name',['nc' num2str(cycleno)]);
+            xmax=0;xmin=0;  % Modifier for time limit (xlim)
+            for idx=1:numel(idselect)
+                subplot(nrow,ncol,idx);
+                ax=([datamat(idselect(idx)).Adjustedtime]-min(datamat(idselect(idx)).Adjustedtime)).*[datamat(idselect(idx)).dt];
+                plot(ax,[datamat(idselect(idx)).AdjustedIntensity]);
+                set(gca,'YTick',[]);
+                set(gca,'XTick',[]);
+                ylim([0 str2num(dlg{6})]);
+                text(0,2000,{num2str(datamat(idselect(idx)).x*100-50,'%.1f')});
+                xmax=max(xmax,max(ax));
+                xmin=min(xmin,min(ax));
+            end
+            for idx=1:numel(idselect)
+                subplot(nrow,ncol,idx);
+                xlim([xmin xmax]);
+            end
         end
+    end
+
+    function hindi_info_Callback(~,~)
+        % Show info of the movies:
+        header={};
+        cnt=1;
+        header{1,1}='FEATURE:';        
+        header{1,2}='VALUE';
+        cnt=cnt+1;
+            header{cnt,1}='Name';
+            header{cnt,2}=DatasetList(crrrow).Name;
+        cnt=cnt+1;
+            header{cnt,1}='dt';        
+            header{cnt,2}=DatasetList(crrrow).dt;
+        cnt=cnt+1;
+            header{cnt,1}='BG intensity';
+            header{cnt,2}=DatasetList(crrrow).BG;
+        cnt=cnt+1;
+            header{cnt,1}='Intensity coeff';
+            header{cnt,2}=DatasetList(crrrow).BG_man;
+        cnt=cnt+1;
+            header{cnt,1}='xlen';
+            header{cnt,2}=DatasetList(crrrow).Lx;    
+        cnt=cnt+1;
+            header{cnt,1}='ylen';
+            header{cnt,2}=DatasetList(crrrow).Ly;
+        cnt=cnt+1;
+            header{cnt,1}='ShiftL';
+            header{cnt,2}=DatasetList(crrrow).ShiftL;
+        cnt=cnt+1;
+            header{cnt,1}='ShiftR';
+            header{cnt,2}=DatasetList(crrrow).ShiftR;
+        cnt=cnt+1;
+            header{cnt,1}='APole';
+            header{cnt,2}=DatasetList(crrrow).APole;
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc9 (s)';
+            try
+                header{cnt,2}=DatasetFeature(1).vborder_rec(10,crrrow);
+            catch
+                header{cnt,2}='';
+            end
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc10 (s)';
+            try
+                header{cnt,2}=DatasetFeature(2).vborder_rec(10,crrrow)*2;
+            catch
+                header{cnt,2}='';
+            end
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc11 (s)';
+            try
+                header{cnt,2}=DatasetFeature(3).vborder_rec(10,crrrow)*2;
+            catch
+                header{cnt,2}='';
+            end
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc12 (s)';
+            try
+                header{cnt,2}=DatasetFeature(4).vborder_rec(10,crrrow)*2;    
+            catch
+                header{cnt,2}='';
+            end
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc13 (s)';
+            try
+                header{cnt,2}=DatasetFeature(5).vborder_rec(10,crrrow)*2;
+            catch
+                header{cnt,2}='';
+            end
+        cnt=cnt+1;
+            header{cnt,1}='tphase nc14 (s)';
+            try
+                header{cnt,2}=DatasetFeature(6).vborder_rec(10,crrrow)*2;
+            catch
+                header{cnt,2}='';
+            end
+            
+            % Put out new figure;
+            htmp=figure('Name',['Movie : ' num2str(crrrow) ': ' DatasetList(crrrow).Name ],'Position',[100 100 500 500]);
+            htmptable =   uitable('Parent',htmp,'Position',[0 0 500 500]);
+            htmptable.Data = header;
     end
 %% Show stuffs from all movies        
     function hall_feature_Callback(~,~)
@@ -731,11 +866,6 @@ set(segfigure,'Visible','on');
                     ymin=zeros(1,15);ymax=zeros(1,15);
                     for tsidx=ts_spec
                         for feaidx=fea_plot(:)'
-                            if strcmp(feature_unit{feaidx},'%')
-                                    ratio=100;
-                                else
-                                    ratio=1;
-                                end
                             if numel(DatasetFeature(cnt0).fearec_all{feaidx,tsidx})
                                 cnt=cnt+1;
                                 % Check for border position if needed
@@ -746,17 +876,17 @@ set(segfigure,'Visible','on');
                                 end
                                 % Begin plotting
                                 subplot(numel(ts_spec),numel(fea_plot),cnt)
-                                plot(DatasetFeature(cnt0).xaxis_all{feaidx,tsidx}-xborder,ratio*DatasetFeature(cnt0).fearec_all{feaidx,tsidx},'.b');hold on;
+                                plot(DatasetFeature(cnt0).xaxis_all{feaidx,tsidx}-xborder,DatasetFeature(cnt0).fearec_all{feaidx,tsidx},'.b');hold on;
                                 tmpx=[AP(1):AP(2)];
                                 % Show fitted Hill curve if needed
                                 if showoption_plot(2)   % Show fitted Hill coefficient
-                                    plot(tmpx,ratio*2*DatasetFeature(cnt0).vborder_rec(feaidx,tsidx)*sigmf(tmpx,[ -DatasetFeature(cnt0).hborder_rec(feaidx,tsidx)*0.04 DatasetFeature(cnt0).xborder_rec(feaidx,tsidx)-xborder]),'--k');
+                                    plot(tmpx,2*DatasetFeature(cnt0).vborder_rec(feaidx,tsidx)*sigmf(tmpx,[ -DatasetFeature(cnt0).hborder_rec(feaidx,tsidx)*0.04 DatasetFeature(cnt0).xborder_rec(feaidx,tsidx)-xborder]),'--k');
                                 end
                                 % Set axis limit
                                 xlim(AP);
                                 yrange{feaidx}=[];
                                 if tsidx==ts_spec(1)
-                                    title([feature_label{feaidx} ' (' feature_unit{feaidx} ')']);
+                                    title(feature_label{feaidx});
                                 end
                                 if tsidx~=ts_spec(end)
                                     set(gca,'XTick',[]);
@@ -790,25 +920,19 @@ set(segfigure,'Visible','on');
         
         if numel(datamat)   % If data is loaded
             cnt=0;
+            pos_range=[AP(1):AP(2)];
             for cycleno=nc_range
                 cnt=cnt+1;
                 ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
-                               
                 if numel(ts_spec)
                     cnt1=0;
                     figure('Name',['Dataset: ' DatasetName '. nc' num2str(cycleno) ]);
-                    
                     for fea=fea_plot(:)'
-                        if strcmp(feature_unit{fea},'%')
-                            ratio=100;
-                        else
-                            ratio=1;
-                        end
                         cnt1=cnt1+1;
                         subplot(numel(fea_plot),1,cnt1);
                         % Put some alignment here
-                        allx=[];allf=[];
-                        allx_={};allf_={};
+                        allx=[];allf=[];    % prealignment
+                        allx_={};allf_={};  % posalignment
                         cnt2=0;
                         for tsidx=ts_spec
                             cnt2=cnt2+1;
@@ -826,52 +950,30 @@ set(segfigure,'Visible','on');
                         if showoption_plot(3)   % Seperate embryo by color
                             for tsidx=ts_spec
                                 cnt2=cnt2+1;
-                                plot(allx_{cnt2},ratio*allf_{cnt2}, ...
+                                plot(allx_{cnt2},allf_{cnt2}, ...
                                         'Marker','.','color',defcolor(tsidx,:),'LineStyle','none'); hold on;
                                 leg{cnt2}=['embryo ' num2str(tsidx)];
                             end
                         else
                             cnt2=cnt2+1;
-                            plot(allx,ratio*allf,...
+                            plot(allx,allf,...
                                 'Marker','.','LineStyle','none');
                             leg{cnt2}='data';
                         end
                         if showoption_plot(5)   % Show single mean curve
                             hold on;
-                            pos_range=[AP(1):AP(2)];
-                            cnt3=0;
-                            mf=[];
-                            sf=[];
-                            for pos=pos_range
-                                cnt3=cnt3+1;
-                                tmp=(allx-pos+binwidth/2).*(allx-pos-binwidth/2)<=0;
-                                mf(cnt3)=mean(allf(tmp));
-                                sf(cnt3)=sqrt(var(allf(tmp)));
+                            if showoption_plot(9)   % Show standard error instead of standard deviation
+                                errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno}./sqrt(nf_rec{fea,cycleno}),'k');
+                            else
+                                errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno},'k');
                             end
-                            errorbar(pos_range,ratio*mf,ratio*sf,'k');
                             leg{cnt2+1}='Mean';
-                        end
+                        end                        
+                        
                         if showoption_plot(6)   % Show individual mean curves
                             hold on;
-                            pos_range=[AP(1):AP(2)];
-                            cnt2=0;
                             for tsidx=ts_spec
-                                cnt2=cnt2+1;
-                                cnt3=0;
-                                mf=[];
-                                sf=[];
-                                for pos=pos_range
-                                    cnt3=cnt3+1;
-                                    tmp=(allx_{cnt2}-pos+binwidth/2).*(allx_{cnt2}-pos-binwidth/2)<=0;
-                                    if numel(tmp)>3
-                                        mf(cnt3)=mean(allf_{cnt2}(tmp));
-                                        sf(cnt3)=sqrt(var(allf_{cnt2}(tmp)));
-                                    else
-                                        mf(cnt3)=NaN;
-                                        sf(cnt3)=NaN;
-                                    end
-                                end
-                                plot(pos_range,ratio*mf,'color',defcolor(tsidx,:));
+                                plot(pos_range,mf_indi{fea,cycleno,tsidx},'color',defcolor(tsidx,:));
                             end
                         end
                         if showoption_plot(4)   % Show legend
@@ -895,11 +997,24 @@ set(segfigure,'Visible','on');
                     xborder=zeros(1,Nmov);
                     for tsidx=ts_spec
                         if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1) % Align embryo
-                            xborder(i)=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
+                            xborder(tsidx)=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
                         end
                     end
+                    % Get interphase duration:
+                    tphase=DatasetFeature(cycleno-8).vborder_rec(10,:)*2;
                     time_align=0;time_normalize=0;
-                    local_draw_kymo(datamat,ts_spec,xborder,cycleno,binwidth,AP,time_normalize,time_align);
+                    [Imap,pos_range,time_axis,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align);
+                    heatmapI(cycleno-8).Abs_map=Imap;
+                    heatmapI(cycleno-8).Abs_time=time_axis;
+                    heatmapI(cycleno-8).Abs_count=Cellcount;
+                    time_align=0;time_normalize=1;
+                    [Imap,pos_range,time_axis,mtphase,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align);
+                    heatmapI(cycleno-8).Rel_map=Imap;
+                    heatmapI(cycleno-8).Rel_time=time_axis;
+                    heatmapI(cycleno-8).Rel_count=Cellcount;
+                    heatmapI(cycleno-8).mtphase=mtphase;
+                    heatmapI(cycleno-8).tphase=tphase;
+                    heatmapI(cycleno-8).pos_range=pos_range;
                 end
             end
         end
@@ -913,11 +1028,11 @@ set(segfigure,'Visible','on');
         header{2,3}='xborder';
         header{2,5}='Hill';
         header{2,7}='Width';
-        header{2,9}='MaxVal';
+        header{2,9}='HalfMax';
         header{2,4}='s_xborder';
         header{2,6}='s_Hill';
         header{2,8}='s_Width';
-        header{2,10}='s_MaxVal';
+        header{2,10}='s_HalfMax';
         for feaidx=fea_plot(:)'
             header{1,2}=feature_label{feaidx};
             outtab=zeros(Nmov*numel(nc_range),10)-1;
@@ -935,8 +1050,18 @@ set(segfigure,'Visible','on');
                             end
                         end
                     end
+                    % Mean data
                     cnt=cnt+1;
                     outline=[nc_range(cycleidx) 0 mean(xrec(:,1)) sqrt(var(xrec(:,1))) mean(xrec(:,2)) sqrt(var(xrec(:,2))) mean(xrec(:,3)) sqrt(var(xrec(:,3))) mean(xrec(:,4)) sqrt(var(xrec(:,4)))];
+                    outtab(cnt,:)=outline;
+                    % Confidence interval
+                    cnt=cnt+1;
+                    outline=[nc_range(cycleidx) -1 ...
+                        DatasetFeature(cycleidx).xborder_CI(feaidx,1) DatasetFeature(cycleidx).xborder_CI(feaidx,2) ...
+                        DatasetFeature(cycleidx).hborder_CI(feaidx,1) DatasetFeature(cycleidx).hborder_CI(feaidx,2) ...
+                        DatasetFeature(cycleidx).wborder_CI(feaidx,1) DatasetFeature(cycleidx).wborder_CI(feaidx,2) ...
+                        DatasetFeature(cycleidx).vborder_CI(feaidx,1) DatasetFeature(cycleidx).vborder_CI(feaidx,2) ...
+                        ];
                     outtab(cnt,:)=outline;
                 end
             end
@@ -949,7 +1074,128 @@ set(segfigure,'Visible','on');
             htmptable.Data = [header;outxls];            
         end
     end
+
+    function hall_TimeMaginifier_Callback(~,~)
+        h=figure;
+        [tlower,tupper,cycle_range]=Magnifier(h,heatmapI);
+        Re_Extract_feature(cycle_range,tlower,tupper);
+    end
 %% Auxiliary function
+    function Re_Extract_feature(cycle_range,tlower,tupper)
+        if nargin==0
+            % Simple refresh
+            cycle_range = nc_range;
+            tlower = zeros(Nmov,numel(nc_range));
+            tupper = zeros(Nmov,numel(nc_range))+10000;
+        end
+        cycle_range_=zeros(1,14);
+        cycle_range_(cycle_range)=1;
+        tlower_ = zeros(Nmov,14);tlower_(1:size(tlower,1),cycle_range)=tlower;
+        tupper_ = zeros(Nmov,14)+10000;tupper_(1:size(tlower,1),cycle_range)=tupper;
+        
+        % Begin trimming:
+        for i=1:numel(datamat)
+            if cycle_range_(datamat(i).cycle)
+                if (datamat(i).Feature(1)>=0)&&(tupper_(datamat(i).tscnt,datamat(i).cycle))
+                    datamat(i).Feature=extract_feature(datamat(i).Intensity,datamat(i).time,...
+                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)]);
+                end
+            end
+        end
+        Update_Mean_Curves;
+    end
+    
+    function Update_Mean_Curves(~)
+        pos_range=[AP(1):AP(2)];
+        % Get the mean curve for specific nuclear cycle
+        if numel(datamat)   % If data is loaded
+            % RESET the holders
+            % Record the mean curves for merged embryos {feature x cycle} x [position]
+            mf_rec={};  % Mean curve
+            sf_rec={};  % Standard deviation
+            nf_rec={};  % Number of nuclei
+            ef_rec={};  % Number of embryo
+
+            % Record the mean curves for individual embryos {feature x cycle x embryo} x [position]
+            mf_indi={};  % Mean curve
+            sf_indi={};  % Standard deviation
+            nf_indi={};  % Number of nuclei
+            cnt=0;
+            for cycleno=nc_range
+                cnt=cnt+1;
+                ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
+                if numel(ts_spec)
+                    cnt1=0;
+                    for fea=1:numel(feature_label)
+                        cnt1=cnt1+1;
+                        % Put some alignment here
+                        allx=[];allf=[];    % Merged feature
+                        allx_={};allf_={};  % Individual feature
+                        cnt2=0;
+                        for tsidx=ts_spec
+                            cnt2=cnt2+1;
+                            if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1) % Align embryo
+                                xborder=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
+                            else
+                                xborder=0;
+                            end
+                            allx=[allx DatasetFeature(cnt).xaxis_all{fea,tsidx}-xborder];
+                            allx_{cnt2}=DatasetFeature(cnt).xaxis_all{fea,tsidx}-xborder;
+                            allf=[allf DatasetFeature(cnt).fearec_all{fea,tsidx}];
+                            allf_{cnt2}=DatasetFeature(cnt).fearec_all{fea,tsidx};
+                        end
+                        % Calculate merged mean curve:
+                            cnt3=0;
+                            mf=[];  % mean
+                            sf=[];  % standard deviation
+                            nf=[];  % Number of samples
+                            for pos=pos_range
+                                cnt3=cnt3+1;
+                                tmp=(allx-pos+binwidth/2).*(allx-pos-binwidth/2)<=0;
+                                mf(cnt3)=mean(allf(tmp));
+                                sf(cnt3)=sqrt(var(allf(tmp)));
+                                nf(cnt3)=numel(tmp);
+                            end
+                            mf_rec{fea,cycleno}=mf;
+                            sf_rec{fea,cycleno}=sf;
+                            nf_rec{fea,cycleno}=nf;
+                            ef_rec{fea,cycleno}=pos_range*0;
+                            
+                        % Calculate individual mean curves                        
+                            cnt2=0;
+                            for tsidx=ts_spec
+                                cnt2=cnt2+1;
+                                cnt3=0;
+                                mf=[];  % mean
+                                sf=[];  % standard deviation
+                                nf=[];  % Number of samples
+                                for pos=pos_range
+                                    cnt3=cnt3+1;
+                                    tmp=(allx_{cnt2}-pos+binwidth/2).*(allx_{cnt2}-pos-binwidth/2)<=0;
+                                    if numel(tmp)>3
+                                        mf(cnt3)=mean(allf_{cnt2}(tmp));
+                                        sf(cnt3)=sqrt(var(allf_{cnt2}(tmp)));
+                                        nf(cnt3)=numel(allf_{cnt2}(tmp));
+                                        ef_rec{fea,cycleno}=ef_rec{fea,cycleno}+1;
+                                    else
+                                        mf(cnt3)=NaN;
+                                        sf(cnt3)=NaN;
+                                        nf(cnt3)=NaN;
+                                    end
+                                end
+                                mf_indi{fea,cycleno,tsidx}=mf;
+                                sf_indi{fea,cycleno,tsidx}=sf;
+                                nf_indi{fea,cycleno,tsidx}=nf;
+                            end                      
+                    end
+                end
+            end
+            mkdir('tmp');
+            [~,tmp]=fileparts(DatasetName);
+            save(['tmp/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI');
+        end
+    end
+
     function hsetAP_Callback(~,~)
         AP(1)=str2num(get(hAPfrom,'String'));
         AP(2)=str2num(get(hAPto,'String'));

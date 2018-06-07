@@ -1,4 +1,4 @@
-function []=local_draw_kymo(datamat,ts_spec,xborder,cycleno,binwidth,AP,time_normalize,time_align)
+function [heatmapI,pos_range,draw_time,mtphase,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align)
     % Draw the kymograph with data in datamat
     % Align the embryo by xborder value
     % Draw in nuclear cycle cycleno
@@ -7,9 +7,10 @@ function []=local_draw_kymo(datamat,ts_spec,xborder,cycleno,binwidth,AP,time_nor
     % time_align: align traces based on 1st spot appearance (left 0 for now)
 mkdir('KymoFig');
 blend_time=1;
-show_movie=1;
+show_movie=0;
 barplot=0;
 %% Setup up parameters for drawling
+maxT=1400;
 if time_normalize
     tmin=0;
     tmax=100;
@@ -17,18 +18,20 @@ if time_normalize
     drawdt=2.5;                  % Drawing intervals (%)
 else
     tmin=0;
-    tmax=1000;
+    tmax=maxT;
     newdt=25;                    % Interval between drawing snapshot (s)
     drawdt=25;                   % Drawing intervals (s)
 end
 timeunit='s';
 color='kgbk';                           % Color for phase in cell cycle
 color_embryo='rgbykcrmb';               % Color for embryo
-draw_time=[tmin:drawdt:tmax];     % When to show snapshot (for movie=1)
+draw_time=[tmin:drawdt:tmax];    % When to show snapshot (for movie=1)
 %% Initiating storage variables
 snapshot_cellsize=[];
 mean_snapshot={};
 Irec_={};
+pos_range=AP(1):AP(2);
+Cellcount=zeros(numel(draw_time),numel(pos_range));
 %% Get the data and do interpolation
 xaxis_all={};yaxis_all={};
 sizecell_all={};idselect_all={};
@@ -81,8 +84,6 @@ for tsidx=ts_spec
             end
         end
     end
-    % Calculate interphase duration:
-    tphase(tsidx)=mode(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect_all{tsidx}));
     % Extract snapshot intensity from each embryos
     Irec=[];
     Srec=[];
@@ -111,7 +112,7 @@ for tsidx=ts_spec
         % Padding limiter at mitosis to
         tmp_I=[-1000000 tmp_I -1000000];
         tmp_s=[tmp_s(1) tmp_s tmp_s(end)];
-        tmp_t=[-1000 tmp_t 1000];
+        tmp_t=[-1000 tmp_t 10000];
         % Extract intensity at snapshot
         Irec(i,:)=interp1(tmp_t,tmp_I,draw_time,'linear');
         Srec(i,:)=interp1(tmp_t,tmp_s,draw_time,'linear');
@@ -130,6 +131,7 @@ end
     cnt=0;
     draw_stop=0;
     snapshot_interpolated={};
+    
     if show_movie
         figure;
     end
@@ -140,16 +142,18 @@ end
             Srec=Srec_{tsidx};
             if (j<=size(Irec,2))
                 % Plot the mean Pon over time
-                pos_range=AP(1):AP(2);
                 pon=[];
                 Irectmp=Irec;
                 Irectmp(Irec==2)=0;
                 Irectmp(Irec<0)=0;
+                cnt_=0;
                 for pos=pos_range
+                    cnt_=cnt_+1;
                     % Find cell with position position
                     tmp=(xaxis_all{tsidx}(:)-50-pos+binwidth/2).*(xaxis_all{tsidx}(:)-50-pos-binwidth/2)<=0;
                     % Calcylate mean Pon
                     pon=[pon mean(Irectmp(tmp,j))];
+                    Cellcount(j,cnt_)=Cellcount(j,cnt_)+sum(tmp);
                 end
                 tmp1=[-50 pos_range-xborder(tsidx) 50];     % Position
                 tmp2=[-1000000 pon -1000000];
@@ -209,7 +213,7 @@ end
         end
     end
     if show_movie
-        filename=['KymoFig/mov_nc' num2str(cycleno)];
+        filename=['KymoFig/mov_nc' num2str(cycleno) '_relativetime' num2str(time_normalize)];
         if exist('filename','var')
             imwrite(F(1).cdata,[filename '.tif'],'writemode', 'overwrite');
             for i=2:numel(F)
@@ -223,37 +227,45 @@ numdraw=numel(nanmean(snapshot_cellsize,1));
 heatmapI=cell2mat(mean_snapshot(:));
 heatmapI(isnan(heatmapI))=0;
 figure;
+mtphase=mean(tphase(ts_spec));
+if time_normalize
+    draw_time=draw_time*mtphase/100;
+end
 % Heat map
-subplot(122);
-%YTickLabel={};
-% for i=1:numel(pos_range)
-%     if any(XTick==pos_range(i))
-%         XTick_(XTick==pos_range(i))=i;
-%     end
-% end
-% 
-% for j=1:numel(draw_time(1:8:end))
-%     YTickLabel{j}=[num2str(draw_time(1+(j-1)*8)) timeunit];
-%     YTickLabel_{j}=[num2str(round(draw_time_(1+(j-1)*8))) 's'];
-% end
-surf(pos_range,draw_time,heatmapI,'EdgeColor','none')
+subplot(222);
+surf(pos_range,draw_time,heatmapI,'EdgeColor','none');
+hold on;
+plot3(pos_range,pos_range*0+mtphase,pos_range*0+1,'LineWidth',2,'LineStyle','--');
 colorbar;
-%set(gca,'YTick',[(1:8:numel(draw_time))],'YTickLabel',YTickLabel_);
-%set(gca,'XTick',XTick_,'XTickLabel',XTickLabel);
 caxis([0 1]);
 xlabel('AP position');
-ylabel(['Time']);
+ylabel(['Time (s)']);
 colormap(hot);
 xlim(AP);
-%ylim([1 nrowFISH+numdraw]);
+ylim([0 maxT]);
 view([0,0,1]);% Adopt horizontal view
 time_axis=get(gca,'ylim');
+% Nuclei count:
+subplot(224);
+surf(pos_range,draw_time,Cellcount,'EdgeColor','none');
+hold on;
+plot3(pos_range,pos_range*0+mtphase,pos_range*0+max(Cellcount(:)),'LineWidth',2,'LineStyle','--');
+colorbar;
+%caxis([0 1]);
+xlabel('AP position');
+ylabel(['Time (s)']);
+ylim(time_axis);
+colormap(hot);
+xlim(AP);
+view([0,0,1]);% Adopt horizontal view
+
+
 % Cell size
-subplot(121);
+subplot(221);
 snapshot_cellsize(snapshot_cellsize==0)=NaN;
 plot(nanmean(snapshot_cellsize,1),draw_time(1:numdraw));
 ylim(time_axis);
 xlabel('Cell size (a.u)');
 filename=['KymoFig/summary_nc' num2str(cycleno)];
 title(['nc' num2str(cycleno)]);
-saveas(gcf,[filename '.fig']);
+saveas(gcf,[filename '_relativetime' num2str(time_normalize) '.fig']);
