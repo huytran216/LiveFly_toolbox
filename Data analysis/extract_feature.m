@@ -10,7 +10,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     %       % 5. Relative Total spot duration of existence 
     %       % 6. Relative Time to max intensity
     %       % 7. Brightest spot intensity
-    %       % 8. Mean RNA produced
+    %       % 8. Mean RNA produced (absolute time)
     %       % 9. Total RNA produced
     %       % 10. Total interphase duration
     %       % 11. Absolute First Activation time
@@ -18,6 +18,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     %       % 13. Absolute Total active duration
     %       % 14. Absolute Total spot duration of existence
     %       % 15. Absolute Time to max intensity
+    %       % 16. Mean RNA produced (relative time)
     %   threshold: threshold to define if x is significant or not
     %   dt: time resolution
     %   Imax: maximum intensity
@@ -29,9 +30,9 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     % Output:
         % res: array of features to be extracted
     %% Set initial parameters if missing
-    res=-ones(1,15);
+    res=-ones(1,16);
     if nargin==0
-        res=-ones(1,15);
+        res=-ones(1,16);
         return;
     end
     if ~exist('threshold','var')
@@ -49,7 +50,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     
     % Fit invalid cell then don't do anything
     if (censored<0)
-        res=-ones(1,15);
+        res=-ones(1,16);
         return;
     end
     % Remove too dim spots
@@ -59,6 +60,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     if exist('trange','var')
         if trange(2)<=tinterphase*dt
             x=x(round(trange(1)/dt)+1:round(trange(2)/dt));
+            time=time(round(trange(1)/dt)+1:round(trange(2)/dt));
         end
     end
     %% Extract features
@@ -109,9 +111,9 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
                 end
         % Brightest spot intensity
                 res(7)=max(x);
-        % Mean RNA synthesis rate
+        % Mean RNA synthesis rate (relative time)
                 if res(4)>0
-                    res(8)=sum(x)/res(4);
+                    res(8)=sum(x)/res(4)*length(x);
                 else
                     res(8)=0;
                 end
@@ -125,7 +127,9 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
                 res(10)=tinterphase*dt;
         % Normalize the time feature
                 if res(4)>=0
-                    res(11:15)=res(2:6);
+                    res(11:15)=res(2:6)*dt;
                     res(2:6)=res(2:6)/length(x);
                 end
+        % Mean RNA synthesis rate (absolute time)
+                res(16)=res(8)/dt/length(x);
     end

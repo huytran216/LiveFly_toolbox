@@ -1,6 +1,6 @@
 function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all,yaxis_all,fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
 %% Define features to be extracted: Check feature_label.mat for reference
-    fea_range=[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15];
+    fea_range=1:numel(feature_label);
 %% Initiating the feature storage
     idrec=[];
     fearec=cell(1,max(fea_range));
@@ -28,11 +28,13 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
     for feaidx=fea_range
         for tsidx=ts_spec
             % Take mean curves
+            if fitoption(4)
                 mxaxis_all{feaidx,tsidx}=AP(1):AP(2);
                 mfearec_all{feaidx,tsidx}=mf_indi{feaidx,cycleno,tsidx};
                 tmp=isnan(mf_indi{feaidx,cycleno,tsidx});
                 mxaxis_all{feaidx,tsidx}=mxaxis_all{feaidx,tsidx}(~tmp);
                 mfearec_all{feaidx,tsidx}=mfearec_all{feaidx,tsidx}(~tmp);
+            end
             % Take individual time point    
                 % Take cell id
                 idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));

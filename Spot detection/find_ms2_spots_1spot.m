@@ -33,14 +33,28 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
         iPlane = reader.getIndex(zs-1, channel, it-1) + 1;
         Irec(:,:,zs) = bfGetPlane(reader, iPlane);
     end
-    Imax=max(Irec,[],3);
     h = fspecial('average', averaging_radius);
-    Imax=imfilter(Imax,h);
-    Imax=Imax-medfilt2(Imax, [averaging_radius*5 averaging_radius*5]);% Background intensity
-%% Try spot detection on the 3D
-    for zs=1:z_max  %loop on z
-        I = Irec(:,:,zs);
+    if any(th==0)
+        figure('Press Left/Arrow to navigate. Enter to exit');        
+        Imax=max(Irec,[],3);        
+        Imax=imfilter(Imax,h);
+        Imax=Imax-medfilt2(Imax, [averaging_radius*4 averaging_radius*4]);% Background intensity
+    end
 
+%% Try spot detection on the 3D
+    % Press left and right to increase decrease zs
+    % Press esc to escape debug
+    zs=1;
+    zscrrmax=0;
+    
+    if any(th==0)
+        esc=0;      % Still in debug mode
+    else
+        esc=1;      % Not in debug mode
+    end
+    
+    while (zs<=z_max)
+        I = Irec(:,:,zs);
 
         F=imfilter(I,h);
         
@@ -50,7 +64,7 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
         end
 
         % Use a median filter
-        Fbg=medfilt2(F, [averaging_radius*5 averaging_radius*5]);% Background intensity
+        Fbg=medfilt2(F, [averaging_radius*4 averaging_radius*4]);% Background intensity
         F_ = (F-Fbg);
         raw3(:,:,zs)=F_;
         filtered3(:,:,zs)=F_;
@@ -59,11 +73,11 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
             ax1=subplot(3,2,1:2);
             imagesc(F);
             colorbar;
-            title(['Original image. z=' num2str(zs)]);
+            title(['Original image (th1). z=' num2str(zs)]);
             ax2=subplot(3,2,3:4);
             imagesc(F_);
             colorbar;
-            title(['Filtered image. z=' num2str(zs)]);
+            title(['Filtered image (th2). z=' num2str(zs)]);
             ax3=subplot(3,2,5:6);
             imagesc(Imax);
             colorbar;
@@ -73,10 +87,49 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
                 xlim(xl);
                 ylim(yl);
             end
-            pause;
             I3(:,:,zs)=F*0;
         else
             I3(:,:,zs)=(F>th(1))&(F_>th(2));
+        end
+        
+        % Get the latest frame
+        zscrrmax=max([zs,zscrrmax]);
+        
+        % Get zs from keypress
+        if ~esc
+            validkey=false;
+            while ~validkey
+                %disp('waiting');
+                if waitforbuttonpress
+                    %disp('pressed');
+                    hitkey = double(get(gcf,'CurrentCharacter'));
+                    switch hitkey
+                        case 28 % Left arrow > go next
+                            zs=zs-1;
+                            if zs<1
+                                zs=1;
+                            end
+                            validkey=true;
+                        case 29 % Right arrow > go next
+                            zs=zs+1;
+                            if zs>z_max
+                                zs=z_max;
+                            end
+                            validkey=true;
+                        case 13  % Enter > Go forward
+                            esc=1;
+                            validkey=true;
+                    end
+                end
+            end
+        end
+        % If continue
+        if esc
+            if any(th==0)
+                return;
+            else
+                zs=zscrrmax+1;
+            end
         end
     end
     clear Irec;
@@ -86,11 +139,13 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
     no=max(max(max(L3D)));                      % Number of spot detected
     raw2d=max(raw3,[],3);
     if numel(loc3)>500
-        display([num2str(numel(loc3)) ' spot detected. Considering increasing threshold value']);
+        disp([num2str(numel(loc3)) ' spot initially detected. Considering increasing threshold value']);
+    else
+        disp([num2str(numel(loc3)) ' spot initially detected']);
     end
 %% Eliminate the clusters too far from the nuclei centres
     inner_clusters=[];
-    d=1000*ones(no,size(nuc.frames,1));
+    d=1e5*ones(no,size(nuc.frames,1));
     for i=1:no
         goodspot=false;
         for j=1:size(nuc.frames,1)
@@ -118,9 +173,9 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
             count_bigger_clusters=size(bigger_clusters,2);
         end
     end
-
+    
     %%  For the survived clusters compute the total intensity
-    if count_bigger_clusters>0  
+    if count_bigger_clusters>0 
         LL3D=zeros(size(II,1),size(II,2),z_max);
         Itot=zeros(size(bigger_clusters,2),1);
         %for i=1:size(inner_clusters,2)
@@ -201,8 +256,7 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
                     detected_spot.resid(ind_spot)=res;
                 end
             end
-        end        
-        fprintf(1,'%d spot(s) found',sum(assigned_spot>0));
+        end
     end
+    fprintf(1,'%d spot(s) found',count_bigger_clusters);
 end
-

@@ -665,6 +665,7 @@ set(segfigure,'Visible','on');
             end
         end
         close(f);
+        Update_Mean_Curves;
     end
     
 %% Show stuffs from individual movies
@@ -1102,7 +1103,6 @@ set(segfigure,'Visible','on');
                 end
             end
         end
-        Update_Mean_Curves;
     end
     
     function Update_Mean_Curves(~)
