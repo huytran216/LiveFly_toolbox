@@ -1,5 +1,5 @@
-mov_folder='D:\Huy todo\170527_CP1\table_summary';               %indicate the full path movies file
-filename='th30_20.txt';
+mov_folder='\\zserver.curie.fr\umr3664\equipe_dostatni\c_perez-romero\RAW\170405_CP1\table_summary';               %indicate the full path movies file
+filename='th45_20.txt';
 
 if strcmp(questdlg('Choose a configuration file?'),'Yes')
     [ConfigName,PathName,FilterIndex] = uigetfile(fullfile(mov_folder,'*.m'),'Select the configuration file');
@@ -17,7 +17,7 @@ nuc=fullfile(mov_folder,filename);
     % Cell cycle to correct:
     cycle_range=[10 11 12 13 14];
     % Threshold to detect fast/slow drifting speed
-    drift_thresh=[0.05 0.05];
+    drift_thresh=[0.07 0.07];
     % Maximum patching time before and after a trace (in seconds):
     % Default: [50 30 70]
     patch_before=100;   % Roughly equal first spot appearance (in second)

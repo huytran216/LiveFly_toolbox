@@ -447,7 +447,7 @@ set(segfigure,'Visible','on');
                     tmp=arrayfun(@(x) subindex(datamat(x).Feature,i),1:numel(datamat));
                     outtab(:,i+9)=tmp(:);
                 end
-                header(10:24)=feature_label;
+                header(10:9+numel(feature_label))=feature_label;
                 waitbar(0.4,f);                
                 outxls=mat2cell(outtab,ones(1,size(outtab,1)),ones(1,size(outtab,2)));
                 %csvwrite(fullfile(FilePath,FileName),outtab);
@@ -917,8 +917,7 @@ set(segfigure,'Visible','on');
         end
     end
 
-    function hall_pattern_Callback(~,~)
-        
+    function hall_pattern_Callback(~,~)        
         if numel(datamat)   % If data is loaded
             cnt=0;
             pos_range=[AP(1):AP(2)];
@@ -969,7 +968,7 @@ set(segfigure,'Visible','on');
                                 errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno},'k');
                             end
                             leg{cnt2+1}='Mean';
-                        end                        
+                        end
                         
                         if showoption_plot(6)   % Show individual mean curves
                             hold on;
@@ -1072,13 +1071,17 @@ set(segfigure,'Visible','on');
             % Put out new figure;
             htmp=figure('Name',feature_label{feaidx},'Position',[100 100 800 500]);
             htmptable =   uitable('Parent',htmp,'Position',[0 0 800 500]);
-            htmptable.Data = [header;outxls];            
+            htmptable.Data = [header;outxls];
+            set(htmptable,'ColumnEditable',true(1,10))
         end
     end
 
     function hall_TimeMaginifier_Callback(~,~)
         h=figure;
-        [tlower,tupper,cycle_range]=Magnifier(h,heatmapI);
+        [tlower,tupper,cycle_range,posborder]=Magnifier(h,heatmapI,binwidth);
+        for i=1:numel(cycle_range)
+            heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
+        end
         Re_Extract_feature(cycle_range,tlower,tupper);
     end
 %% Auxiliary function
@@ -1199,6 +1202,9 @@ set(segfigure,'Visible','on');
     function hsetAP_Callback(~,~)
         AP(1)=str2num(get(hAPfrom,'String'));
         AP(2)=str2num(get(hAPto,'String'));
+        if (AP(1)>-100)&&(AP(2)>-100)
+            Update_Mean_Curves;
+        end
     end
 
     function hset_fea_ref(~,~)

@@ -27,6 +27,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     ylim_down=0;
     Icolumn=24;
     rm={};
+    nclist={};
     range1=1:10001;filename1='Result_file1';
     range2=10002:30000;filename2='Result_file2';
     border13=10000;
@@ -39,6 +40,9 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     run(fullfile(fullpath,'correction.m'));
     if ~exist('rm','var')
         rm={};
+    end
+    if ~exist('nclist','var')
+        nclist={};
     end
     if ~exist('border13','var')
         border13=10e5;
@@ -129,6 +133,11 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         % Peform correcting the data based on correction.m file
         if numel(rm)>=i
             if ismember(datamat(i,2),rm{i})
+                Ival=0;
+            end
+        end
+        if numel(nclist)
+            if ismember(datamat(i,1),rm{i})
                 Ival=0;
             end
         end

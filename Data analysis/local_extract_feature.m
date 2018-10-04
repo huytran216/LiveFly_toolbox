@@ -35,7 +35,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
                 mxaxis_all{feaidx,tsidx}=mxaxis_all{feaidx,tsidx}(~tmp);
                 mfearec_all{feaidx,tsidx}=mfearec_all{feaidx,tsidx}(~tmp);
             end
-            % Take individual time point    
+            % Take individual time point
                 % Take cell id
                 idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));
                 % Take cell position and feature value
@@ -56,9 +56,9 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
         limit=0;
         if numel(xaxis_all)
             fitoption_=fitoption;
-            if feaidx==1
-                fitoption_(1)=1;
-            end
+            %if feaidx==1
+            %    fitoption_(1)=1;
+            %end
             if feaidx==10
                 % Find interphase duration
                 for ts=ts_spec

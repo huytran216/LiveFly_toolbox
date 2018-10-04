@@ -1,4 +1,4 @@
-function [tlower,tupper,cycle_range]=Magnifier(h,heatmapI)
+function [tlower,tupper,cycle_range,posborder]=Magnifier(h,heatmapI,wd)
 % Output: 
 % tlower: lowerbound for interphase: size: Nembryo x 5 (cycle) 
 % tupper: upperbound for interphase: size: Nembryo x 5 (cycle)
@@ -29,26 +29,39 @@ set ( gcf, 'Color', [0.7 0.7 0.7] )
 % Plot axis: 1-5 <=> 10-14
 Nembryo = 0;
 for axidx=1:5
-    axmap(axidx) = axes('Position',[(axidx-1)*0.2+0.03 0.30 0.15 0.65],'XTickLabel',[],'YTickLabel',[]);
+    % The axes for plotting kymograph
+    axmap(axidx) = axes('Position',[(axidx-1)*0.2+0.03 0.40 0.15 0.55],'XTickLabel',[],'YTickLabel',[]);
+    % Set beginning time
     hmessage_fromTime(axidx)=uicontrol('Style','text','String','From (s):',...
-        'Position',[(axidx-1)*240+36,100,100,20],'FontSize',10, 'HorizontalAlignment','left',...
+        'Position',[(axidx-1)*240+36,170,100,20],'FontSize',10, 'HorizontalAlignment','left',...
         'ForegroundColor','white','BackgroundColor',[0.7 0.7 0.7]);
     h_fromTime(axidx) = uicontrol('Style','edit','String',num2str(0),...
-        'Position',[(axidx-1)*240+100,100,80,20],'FontSize',10, 'HorizontalAlignment','left');
+        'Position',[(axidx-1)*240+100,170,80,20],'FontSize',10, 'HorizontalAlignment','left');
+    % Set ending time
     hmessage_toTime(axidx)=uicontrol('Style','text','String','To (s):',...
-        'Position',[(axidx-1)*240+36,70,100,20],'FontSize',10, 'HorizontalAlignment','left',...
+        'Position',[(axidx-1)*240+36,140,100,20],'FontSize',10, 'HorizontalAlignment','left',...
         'ForegroundColor','white','BackgroundColor',[0.7 0.7 0.7]);
-    tmp=10000;
+    tmp1=10000;
+    tmp2=0;
     if numel(heatmapI)>=axidx+1
         if numel(heatmapI(axidx+1).mtphase)
-            tmp=num2str(heatmapI(axidx+1).mtphase);
+            tmp1=num2str(heatmapI(axidx+1).mtphase);
+            if isfield(heatmapI,'posborder')
+                tmp2=num2str(heatmapI(axidx+1).posborder);
+            end
             if Nembryo < numel(heatmapI(axidx+1).tphase)
                 Nembryo = numel(heatmapI(axidx+1).tphase);
             end
         end
     end
-    h_toTime(axidx) = uicontrol('Style','edit','String',tmp,...
-        'Position',[(axidx-1)*240+100,70,80,20],'FontSize',10, 'HorizontalAlignment','left');
+    h_toTime(axidx) = uicontrol('Style','edit','String',num2str(tmp1),...
+        'Position',[(axidx-1)*240+100,140,80,20],'FontSize',10, 'HorizontalAlignment','left');
+    % Set border position
+    hmessage_posBorder(axidx)=uicontrol('Style','text','String','Border (%EL):',...
+        'Position',[(axidx-1)*240+16,110,120,20],'FontSize',10, 'HorizontalAlignment','left',...
+        'ForegroundColor','white','BackgroundColor',[0.7 0.7 0.7]);
+    h_posBorder(axidx) = uicontrol('Style','edit','String',num2str(tmp2),...
+        'Position',[(axidx-1)*240+100,110,80,20],'FontSize',10, 'HorizontalAlignment','left');
 end
 
 % Trim button:
@@ -58,6 +71,9 @@ hQuit = uicontrol('Style','pushbutton','String', 'Quit',...
 hTrim = uicontrol('Style','pushbutton','String', 'Trim interphase',...
         'Position',[880,20,100,40],...
         'Callback',@hTrim_CallBack);
+hDraw = uicontrol('Style','pushbutton','String', 'Draw mean intensity @border',...
+        'Position',[680,20,180,40],...
+        'Callback',@hDraw_CallBack);
 % Plot the plot
 normalize_time=0;
 Draw_kymo();
@@ -102,13 +118,16 @@ cycle_range=[];
     function hQuit_CallBack(~,~)
         close(h);
     end
+
     function hTrim_CallBack(~,~)
+        cycle_range=[];
         for i=2:6
             if numel(heatmapI)>=i
                 if numel(heatmapI(i).Abs_map)
                     cycle_range=[cycle_range i+8];
                     tlower(1:Nembryo,numel(cycle_range)) = str2double(get(h_fromTime(i-1),'String'));
                     tupper(1:Nembryo,numel(cycle_range)) = str2double(get(h_toTime(i-1),'String'));
+                    posborder(1:Nembryo,numel(cycle_range))= str2double(get(h_posBorder(i-1),'String'));
                     if normalize_time
                         % Scale tlower and tupper by their relative tinterphase
                         for j=1:Nembryo
@@ -122,6 +141,39 @@ cycle_range=[];
             end
         end
         close(h);
+    end
+
+    function hDraw_CallBack(~,~)
+        cycle_range=[];
+        % Draw the intensity curve at the border over time
+        for i=2:6
+            if numel(heatmapI)>=i
+                if numel(heatmapI(i).Abs_map)
+                    cycle_range=[cycle_range i+8];
+                    posborder(1:Nembryo,numel(cycle_range))= str2double(get(h_posBorder(i-1),'String'));
+                    tlower_(1,numel(cycle_range)) = str2double(get(h_fromTime(i-1),'String'));
+                    tupper_(1,numel(cycle_range)) = str2double(get(h_toTime(i-1),'String'));
+                    % Begin drawing
+                    posidx=(heatmapI(i).pos_range-posborder(1,end)-wd/2).*(heatmapI(i).pos_range-posborder(1,end)+wd/2)<0;
+                    if normalize_time
+                        tmp=mean(heatmapI(i).Rel_map(:,posidx)');
+                        tmp_=heatmapI(i).Rel_time;
+                    else
+                        tmp=mean(heatmapI(i).Abs_map(:,posidx)');
+                        tmp_=heatmapI(i).Abs_time;
+                    end
+                    if numel(cycle_range)==1
+                        figure;
+                    end
+                    plot(tmp_-tlower_(1,end),tmp,'Display',['nc' num2str(cycle_range(end))]); hold on;
+                end
+            end
+        end
+        if numel(cycle_range)>0
+            legend show;
+            xlabel('Time (s)');
+            ylabel('PSpot');
+        end        
     end
 %% Wait to close
     uiwait(h) 

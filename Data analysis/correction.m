@@ -18,6 +18,10 @@ Icolumn=28;
 % All spots detected in this frame are ignored
 rm={};
 
+%% Nuclei to ignore: enter the ID of the nuclei to ignore
+nclist={66};
+
+
 % In case we use a hybrid threshold, we have different result file
 % specify range1 and range2 the frame range for differnt result file
 % In case we only have one result file, set range1 to 1:20000 (all movie)

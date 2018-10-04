@@ -35,8 +35,8 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
     end
     h = fspecial('average', averaging_radius);
     if any(th==0)
-        figure('Press Left/Arrow to navigate. Enter to exit');        
-        Imax=max(Irec,[],3);        
+        figure('Name','Press Left/Arrow to navigate. Enter to exit');        
+        Imax=max(Irec,[],3);
         Imax=imfilter(Imax,h);
         Imax=Imax-medfilt2(Imax, [averaging_radius*4 averaging_radius*4]);% Background intensity
     end
@@ -53,6 +53,9 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
         esc=1;      % Not in debug mode
     end
     
+    % Define the median filter
+    f = @(x) medfilt2(x, [averaging_radius*4 averaging_radius*4]);
+    
     while (zs<=z_max)
         I = Irec(:,:,zs);
 
@@ -64,7 +67,17 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
         end
 
         % Use a median filter
-        Fbg=medfilt2(F, [averaging_radius*4 averaging_radius*4]);% Background intensity
+        if any(th==0)
+            Fbg=medfilt2(F, [averaging_radius*4 averaging_radius*4]);% Background intensity
+        else
+            mask=F>th(1);
+            if any(mask(:))
+                %Fbg=roifilt2(F,mask,f);  % Quicker median filter
+                Fbg=roifilt2_median(F, mask, [averaging_radius*4 averaging_radius*4]);% Background intensity
+            else
+                Fbg=F;
+            end
+        end
         F_ = (F-Fbg);
         raw3(:,:,zs)=F_;
         filtered3(:,:,zs)=F_;

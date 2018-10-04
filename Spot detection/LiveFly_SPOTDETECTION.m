@@ -4,16 +4,16 @@ warning off;
 clc;       %reset the writing space
 addpath('..\Tool\bfmatlab\');
 %%  LOAD THE MULTI-TIFF FILE FOR THE NUP CHANNEL
-mov_folder='D:\Matlab\HUY TESTBOX FOR LIVEFLY\Test';                       %indicate the full path movies file
-main_mov='RAWMovie.tif';                            %title of ensemble movie (with extension)
+mov_folder='C:\Users\Anakine\Desktop\20180301_AB1';                       %indicate the full path movies file
+main_mov='WTxH6B6_1.lsm';                            %title of ensemble movie (with extension)
 nuclei_mov='RED';                                   %title of segmented nuclei movie (with/without extension)
 
 %frame for segmentation file
 seg_init = 1;
-seg_end  = 220;
+seg_end  = 371;
 %select the frame range you want to analyze
 it_start=1;
-it_end=220;
+it_end=371;
 %% Parameters:
 ConfigName=0;
 if strcmp(questdlg('Choose a configuration file?'),'Yes')
@@ -220,7 +220,7 @@ for ir=1:size(nuc.frames,1)
                         %fprintf(1,'%g ',infos_spot_nuc(id,it,i,j));
                         fprintf(fp,'%g ',infos_spot_nuc(id,it,i,j));
                     end
-                end                
+                end
                 %fprintf(1,'\n');
                 fprintf(fp,'\n');
             %end
