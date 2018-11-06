@@ -1313,6 +1313,7 @@ set(segfigure,'Visible','on');
     ylim_down=0;
     Icolumn=24;
     rm={};
+    nclist={};
     range1=1:10001;filename1='Result_file1';
     range2=10002:30000;filename2='Result_file2';
     border13=10000;

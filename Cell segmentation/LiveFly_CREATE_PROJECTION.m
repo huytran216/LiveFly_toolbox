@@ -1,15 +1,15 @@
 addpath('..\Tool\bfmatlab\');
 
 %% Input folder
-folder='C:\Matlab\Test\';           % Original movie folder
-mov_in='RAWMovie.tif';              % Original movie name with extension
+folder='C:\Users\Anakine\Desktop\20181016_1';           % Original movie folder
+mov_in='B6-MS2_800gain_1digitalgain.lsm';              % Original movie name with extension
 mov_out='RED';                      % Maximum projection movie [NO EXTENSION]
 
 channel=1;               % Channel for Nuclei image (0 or 1)
-n_frame=[1:220];         % Range of frame to be analyzed
+n_frame=[1:450];         % Range of frame to be analyzed
 
 %% Parameters for 3D projection (generally unchanged)
-fsize=2;                 % Size of the filter before creating maximum projection, should be small (~1 or 2) for nc14.
+fsize=3;                 % Size of the filter before creating maximum projection, should be small (~1 or 2) for nc14.
 quantile_threshold=[0.5];% Quantile 
 max_projection=5;        % number of maximum layer for the projection - approximating half size of a nuclei in z stack
 alignratio=0.3;          % Resize the images before alignment for speed
@@ -38,10 +38,10 @@ for frame=n_frame
             iPlane = reader.getIndex(z - 1, channel, frame - 1) + 1;
             Itmp = bfGetPlane(reader, iPlane)*brightness;
             if fsize>1
-                Itmp_=zeros(size(Itmp));
-                for j=1:numel(quantile_threshold)
-                    Itmp_=Itmp_+double(ordfilt2(Itmp,round(quantile_threshold(j)*(fsize^2)),true(fsize)));
-                end
+                Itmp_=medfilt2(Itmp,[fsize fsize]);
+                %for j=1:numel(quantile_threshold)
+                %    Itmp_=Itmp_+double(ordfilt2(Itmp,round(quantile_threshold(j)*(fsize^2)),true(fsize)));
+                %end
             else
                 Itmp_=Itmp;
             end

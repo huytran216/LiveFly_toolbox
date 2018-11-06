@@ -27,7 +27,8 @@ framefin = 150;
 Nf = 1e5;           % Update Nf if only wish to mask till that frame
 showBW = 0;
 Img = [];
-BW = [];BW=uint16(BW);
+BW = [];BW=uint16(BW);  % Mask
+BWsave = uint16(BW);     % Temporary mask: after filtering/automatic segmentation loaded
 BWL = [];BWL=uint16(BWL);
 Nnuc = [];
 nucActive = {};
@@ -65,10 +66,13 @@ mFile = uimenu('Label','File_');
     hloadbw = uimenu(mFile,'Label','Load Mask',...
     'Callback',@hloadbw_Callback);
 
+    hloadbwpre = uimenu(mFile,'Label','Load guessed mask',...
+        'Callback',@hloadbwpre_Callback);
+    
     hquitbutton = uimenu(mFile,'Label','Quit',...
     'Callback',@hquitbutton_Callback); % Quit seg
 
-% Edit mask:
+% View methods:
 mView = uimenu('Label','View_');
     
     hzoom_ = uimenu(mView,'Label','Zoom in/out',...
@@ -114,6 +118,9 @@ mEdit = uimenu('Label','Edit_');
         
         hrealign = uimenu(mEdit,'Label','Realign',...
             'Callback',@hrealign_Callback);
+        
+        happlypreset = uimenu(mEdit,'Label','Apply preset',...
+            'Callback',@ApplyPreset_Callback);
 % Cell tracking
 mTrack = uimenu('Label','Track_');
     htrack = uimenu(mTrack,'Label','Track',...
@@ -177,7 +184,7 @@ htextthresh = uicontrol('Style','text','String','Threshold',...
 hthresh = uicontrol('Style','slider',...
     'Min',0,'Max',255, 'value',openflt,...
     'Position',[120,670,130,20],...
-    'SliderStep',[1/256 0.1],'Callback',@hfilter_Callback);
+    'SliderStep',[1/256 0.1],'Callback',@hthresh_Callback);
 
 % Segmentation buttons
 hsegment = uicontrol('Style','pushbutton','String', 'Segment (S)',...
@@ -298,6 +305,7 @@ set(segfigure,'Visible','on')
                 sI = [Hg,Wd];
                 Img = [];
                 BW = zeros(Hg,Wd,Nf,'uint16');
+                BWtmp = zeros(Hg,Wd);
                 BWL = zeros(Hg,Wd,Nf,'uint16');
                 Nnuc = zeros(Nf,1);
                 nucActive=cell(1,Nf);
@@ -305,7 +313,7 @@ set(segfigure,'Visible','on')
                 h = waitbar(0,'Loading image');
                 for i=1:Nf
                     waitbar(i/Nf,h)
-                    Img = cat(3,Img,imread([PathName,FileName],i));
+                    Img = cat(3,Img,im2uint8(imread([PathName,FileName],i)));
                 end
                 close(h);
             % Setup the axis
@@ -325,11 +333,11 @@ set(segfigure,'Visible','on')
                 set(hbw,'Units','Normalized');
                 set(hbw,'Position',[panelI_X1,panelI_Y1+sI_(1),panelI_X2,panelI_Y2]);
                 BW(:,:,1) = 0;
+                frametop=1;
+                framebottom=sI(1);
                 axis normal
                 showI(Img(:,:,1),BW(:,:,1));
                 set(hframe,'max',Nf,'SliderStep',[1/(Nf-1) 0.2],'Value',1);
-                frametop=1;
-                framebottom=sI(1);
                 set(htopframef,'String',num2str(1));
                 set(hbottomframef,'String',num2str(sI(1)));
                 set(hpath,'String',[PathName,FileName,'. Nframe = ' num2str(Nf)]);
@@ -388,14 +396,22 @@ set(segfigure,'Visible','on')
         % Extract the background from image:
         background = imopen(img,strel('disk',round(openflt*ratiostrel)));
         img=imfilter(img-background,f1,'replicate');
+        % Save tmp image:
+        BWsave=img;
+        % Apply threshold
+        hthresh_Callback();
+    end
+    
+    % Apply a threshold to the filtered image
+    function hthresh_Callback(~,~)
         % Perform thresholding
         openthresh = round(get(hthresh,'Value'))/255;
-        if openthresh==0
-            openthresh=graythresh(img);
+        if openthresh==0    % If not set, then set automatic
+            openthresh=graythresh(BWsave);
         end
         % Increasing contrast only:
         %BW(:,:,frame) = im2bw(img,openthresh);
-        BWtmp=(im2bw(img,openthresh));
+        BWtmp=(im2bw(BWsave,openthresh));
         BW(:,:,frame) = double(BWtmp);
         if get(hfill,'Value')
             BW(:,:,frame) = imfill(BW(:,:,frame),'holes');
@@ -414,7 +430,7 @@ set(segfigure,'Visible','on')
         set(hviewmode,'String',['View mode: ' num2str(showBW)]);
         showI;
     end
-
+    
     % Remove a mask - Modification on Panel 1.
     function hremove_Callback(~,~)
         if zoommode==1
@@ -721,6 +737,45 @@ function segment_findcircle(~,~)
             showI
         catch
             msgbox('No mask file found');
+        end
+    end
+
+    function hloadbwpre_Callback(~,~)
+        answer = questdlg('(!) This act will overwrite all of your current progress (but not data file)','Load preset mask','Yes','No','No');
+        if strcmp(answer,'Yes')
+            try
+                for idx=1:Nf
+                    ApplyPreset(idx);
+                end
+            catch
+                msgbox(['Stop at frame ' num2str(idx)]);
+            end
+        end
+    end
+
+    % Load preset mask into mask
+    function ApplyPreset(idx)
+        k = strfind(FileName,'.');
+        % Load mask
+        Itmp = imread([PathName,FileName(1:k(end)-1),'_Preset.tif'],idx*2);
+        Itmp=imresize(Itmp,[size(BW,1) size(BW,2)],'nearest');
+        % Apply mask
+        BW(:,:,idx)=~(Itmp);
+        % Segment
+        frame=idx;
+        set(hframe,'Value',frame);
+        hsegment_Callback;
+        for i=1:3
+            hbwplus_Callback;
+        end
+    end
+    
+    function ApplyPreset_Callback(~,~)
+        try
+            ApplyPreset(frame);
+            showI;
+        catch
+            msgbox('Preset mask not found');
         end
     end
     % Show cell count over time
