@@ -197,7 +197,7 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
             %ind=inner_clusters(i);
             ii=(L3D(:)==ind);
             LL3D(ii)=ind;
-            loc3(ind).Area;
+            loc3(ind).Area
             %Itot(i)=sum(raw3(ii));
             Itot(i)=sum(filtered3(ii));
         end

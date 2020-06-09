@@ -4,16 +4,16 @@ warning off;
 clc;       %reset the writing space
 addpath('..\Tool\bfmatlab\');
 %%  LOAD THE MULTI-TIFF FILE FOR THE NUP CHANNEL
-mov_folder='C:\Users\Anakine\Desktop\20180301_AB1';                       %indicate the full path movies file
-main_mov='WTxH6B6_1.lsm';                            %title of ensemble movie (with extension)
+mov_folder='Y:\equipe_dostatni\g_fernandes\RAW\190808_GF4';                       %indicate the full path movies file
+main_mov='B9-MS2-M5.lsm';                            %title of ensemble movie (with extension)
 nuclei_mov='RED';                                   %title of segmented nuclei movie (with/without extension)
 
 %frame for segmentation file
 seg_init = 1;
-seg_end  = 371;
+seg_end  = 380;
 %select the frame range you want to analyze
-it_start=1;
-it_end=371;
+it_start=[250];
+it_end=[260];
 %% Parameters:
 ConfigName=0;
 if strcmp(questdlg('Choose a configuration file?'),'Yes')
@@ -115,8 +115,8 @@ for it=it_start:it_end
     end
     I_mask=imread([seg_mov '.tif'],it);
     % Combined the two channels RED and GREEN
-    I_total=cat(3,uint8(brightness_ratio(1)*I_mask),uint8(brightness_ratio(2)*raw_spot_t(:,:,it)),uint8(zeros(size(I_mask))));
-    imwrite(I_total,fullfile(mov_folder,'output_images','img_combined.tif'),'tif','compression','none','writemode',writemod);
+        I_total=cat(3,uint8(brightness_ratio(1)*I_mask),uint8(brightness_ratio(2)*raw_spot_t(:,:,it)),uint8(zeros(size(I_mask))));
+        %imwrite(I_total,fullfile(mov_folder,'output_images','img_combined.tif'),'tif','compression','none','writemode',writemod);
     % Create label on image:
     ax=imshow(zeros([Lx Ly]),'InitialMagnification',100);
     proportionXY=get(gcf,'Position').*get(gca,'Position');proportionXY=proportionXY([4 3])./[Lx Ly];

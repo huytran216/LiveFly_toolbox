@@ -25,9 +25,13 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
             % Load the data file specified in filname
             nuc=struct;
             position_to_row=[];
-            datamat=dlmread(filename,'\t',0,0);
-            if size(datamat,2)<10
-                datamat=dlmread(filename,' ',0,0);
+            try
+                datamat=dlmread(filename,'\t',0,0);
+                if size(datamat,2)<10
+                    datamat=dlmread(filename,' ',0,0);
+                end
+            catch
+                datamat=dlmread(filename,',',0,0);
             end
             dt=datamat(1,13);
             for i=1:size(datamat,1)
@@ -111,31 +115,37 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
             cnt=0;
             for i=valid_nuc
                 % If a cell has two daughters in the next cell cycle
-                idx_d1=idx_nuc(daughter1_nuc(i));
-                idx_d2=idx_nuc(daughter2_nuc(i));
-                if cycle_nuc(idx_d1)==cycle_nuc(idx_d2)
-                    if cycle_nuc(idx_d1)==cycle_nuc(i)+1
-                        cnt=cnt+1;
-                        nc_rec(cnt)=cycle_nuc(i);
-                        x_rec(cnt)=x_nuc(i);
-                        % Find the time/position when they divide:
-                        div_time=find(nuc.frames(i,:),1,'last');
-                        % Find the time/position when they are farthest
-                        for ttime=1:max_frame
-                            if div_time+ttime<=Nf
-                                if nuc.frames(idx_d1,div_time+ttime)&nuc.frames(idx_d2,div_time+ttime)
-                                    dis_rec(cnt,ttime)=sqrt( ...
-                                        (nuc.x(idx_d1,div_time+ttime) ...
-                                        -nuc.x(idx_d2,div_time+ttime))^2 +...
-                                        (nuc.y(idx_d1,div_time+ttime) ...
-                                        -nuc.y(idx_d2,div_time+ttime))^2);
-                                else
-                                    break;
+                try
+                    idx_d1=idx_nuc(daughter1_nuc(i));
+                    idx_d2=idx_nuc(daughter2_nuc(i));
+                    if cycle_nuc(idx_d1)==cycle_nuc(idx_d2)
+                        % The two daughters must be long enough for earlier nc, for
+                        % the last nc, we are desperate enough to use any
+                        % nuclei with two daughters
+                        if (cycle_nuc(idx_d1)==cycle_nuc(i)+1)||(cycle_nuc(i)==nc_range(end))
+                            cnt=cnt+1;
+                            nc_rec(cnt)=cycle_nuc(i);
+                            x_rec(cnt)=x_nuc(i);
+                            % Find the time/position when they divide:
+                            div_time=find(nuc.frames(i,:),1,'last');
+                            % Find the time/position when they are farthest
+                            for ttime=1:max_frame
+                                if div_time+ttime<=Nf
+                                    if nuc.frames(idx_d1,div_time+ttime)&nuc.frames(idx_d2,div_time+ttime)
+                                        dis_rec(cnt,ttime)=sqrt( ...
+                                            (nuc.x(idx_d1,div_time+ttime) ...
+                                            -nuc.x(idx_d2,div_time+ttime))^2 +...
+                                            (nuc.y(idx_d1,div_time+ttime) ...
+                                            -nuc.y(idx_d2,div_time+ttime))^2);
+                                    else
+                                        break;
+                                    end
                                 end
                             end
+                            div_rec(cnt)=div_time;
                         end
-                        div_rec(cnt)=div_time;
                     end
+                catch
                 end
             end
             
@@ -157,7 +167,7 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
             last_sep(cellfun(@isempty,last_sep))={0};
             for i=1:cnt
                 if ~(first_sep{i})
-                    sep_rec(i)=div_rec(i);
+                    sep_rec(i)=NaN;
                 else
                     if last_sep{i}==0
                         sep_rec(i)=NaN;
@@ -167,8 +177,8 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
                 end
             end
             subplot(133);       % Plot separation time
-            plot(x_rec,sep_rec,'xb','DisplayName','t0');hold on;
-            plot(x_rec,div_rec,'xr','DisplayName','Sep time');
+            plot(x_rec,sep_rec,'ob','DisplayName','t0');hold on;
+            plot(x_rec,div_rec,'.r','DisplayName','Sep time');
             
      % Fit and find frame for t0 at each given position:
         % Set the position axis
@@ -179,10 +189,10 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
         end_cycle=zeros(1,15);      % For cycle starting time
         xfinrec=cell(1,15);
         tfinrec=cell(1,15);
-        for cycle=1:15
+        for cycle=nc_range
             idselect1=(nc_rec==cycle)&(~isnan(sep_rec));
-            idselect=(abs(sep_rec-mode(sep_rec(idselect1)))*dt<100)&idselect1;
-            if cycle&(sum(idselect)>=8)
+            idselect=(abs(sep_rec-mode(sep_rec(idselect1)))*dt<150)&idselect1; % Making sure the separation point is not an odd point
+            if (sum(idselect)>=8)
                 % Fit the sep_time of same cycle
                 xfinrec{cycle}=x_rec(idselect);
                 tfinrec{cycle}=sep_rec(idselect);
@@ -192,9 +202,11 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
                 xfeed=xfinrec{cycle};
                 yfeed=tfinrec{cycle};
                 pfinrec{cycle} = fminsearchbnd(@ffit,[mean(yfeed) mean(xfeed) 1],[0 0.2 0],[1e5 0.8 1e5]);
-                tmp=mitotic_val(pfinrec{cycle},[0:0.01:1]);
-                plot([0:0.01:1]*(datamat(1,16)+datamat(1,17)+datamat(1,15))-datamat(1,16),tmp/dt,'DisplayName',['nc' num2str(cycle) '-nc' num2str(cycle+1)],'LineWidth',2,'LineStyle','--');
-                end_cycle(cycle)=mean(tmp);                
+                pfinrec{cycle}
+                ax_=[min(xfeed):0.01:max(xfeed)];
+                tmp=mitotic_val(pfinrec{cycle},ax_);
+                plot(ax_*(datamat(1,16)+datamat(1,17)+datamat(1,15))-datamat(1,16),tmp/dt,'DisplayName',['nc' num2str(cycle) '-nc' num2str(cycle+1)],'LineWidth',2,'LineStyle','--');
+                end_cycle(cycle)=mean(tmp);
             end
         end
         legend show;
@@ -204,8 +216,8 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
         k = strfind(filename,'.');
         outfile=[filename(1:k(end)-1) '_fixed.txt'];
         
-        datamat_=datamat;
-
+        datamat_=[];
+        invalid=[];
         % Begin realigning the traces
         for cycle=nc_range
              % Find the interphase duration:
@@ -218,67 +230,103 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
                 interphase_duration=size(nuc.frames,2)-end_cycle(cycle-1);
             end
             % Select traces in the cycle that is neither too long or short
-            idselect=find((cycle_nuc==cycle)&...
-                (life_nuc>=interphase_duration*patch_crit(3)/100)...
-                &((life_nuc<interphase_duration*1.2)));
+            %idselect=find((cycle_nuc==cycle)&...
+            %    (life_nuc*dt>=interphase_duration*patch_crit(3)/100)...
+            %    &((life_nuc*dt<interphase_duration*1.2)));
+            
+            idselect=find((cycle_nuc==cycle));            
+            
             % Begin adjusting the nuclei traces:
             for i=idselect
                 % Find predicted begin and end of traces:
                     % Begin
+                        x_nuc_relative=(datamat(1,16)+x_nuc(i))/(datamat(1,16)+datamat(1,17)+datamat(1,15));
                         if pfinrec{cycle-1}
-                            start_it=mitotic_val(pfinrec{cycle-1},x_nuc(i));
+                            start_it=mitotic_val(pfinrec{cycle-1},x_nuc_relative);
                         else
                             start_it=1e5;
                         end
                     % End
                         if pfinrec{cycle}
-                            stop_it=mitotic_val(pfinrec{cycle},x_nuc(i));
+                            stop_it=mitotic_val(pfinrec{cycle},x_nuc_relative);
                         else
                             stop_it=0;
                         end
-                    % If traces end too early:
+                    % If traces end or begin too early/late >> passing:
                     t_bg=find(nuc.frames(i,:),1,'first');
                     t_end=find(nuc.frames(i,:),1,'last');
-                    if ((t_bg-start_it)*dt>patch_crit(1))||((stop_it-t_end)*dt>patch_crit(2))
-                        continue;
-                    end
                 % Creates a blank row
                     empty_row=datamat(1,:)*0;
-                    % Create blank row to account for time before real trace
+                    % Create blank row to account for time BEFORE real trace
                         empty_row(1:19)=datamat(position_to_row(i,t_bg),1:19);
                         % Put new column at the end of datamat matrix:
-                        for j=ceil(start_it):t_bg-1
-                            empty_row(2)=j;
-                            empty_row(12)=cycle;
-                            datamat_(end+1,:)=empty_row;
-                            nuc.frames(i,j)=1;
-                        end                        
-                    % Create blank row to account for time after real trace
+                        if (abs(t_bg*dt-start_it)<patch_crit(1))
+                            for j=ceil(start_it/dt):t_bg-1
+                                empty_row(2)=j;
+                                empty_row(12)=cycle;
+                                datamat_(end+1,:)=empty_row;
+                                nuc.frames(i,j)=1;
+                            end
+                        else
+                            if start_it<1e5
+                                invalid = [invalid,i];
+                            end
+                        end
+                    % Create blank row to account for time AFTER real trace
                         empty_row(1:19)=datamat(position_to_row(i,t_end),1:19);
                         % Put new column at the end of datamat matrix:
-                        for j=t_end+1:floor(stop_it)
-                            empty_row(2)=j;
-                            empty_row(12)=cycle;
-                            datamat_(end+1,:)=empty_row;
-                            nuc.frames(i,j)=1;
+                        if (abs(stop_it-t_end*dt)<patch_crit(2))
+                            for j=t_end+1:floor(stop_it/dt)
+                                empty_row(2)=j;
+                                empty_row(12)=cycle;
+                                datamat_(end+1,:)=empty_row;
+                                nuc.frames(i,j)=1;
+                            end
+                        else
+                            if stop_it>0
+                                invalid = [invalid,i];
+                            end
                         end
                     % Set the remaining cycle to the right value:
                         for j=t_bg:t_end
-                            datamat_(position_to_row(i,j),12)=cycle;                            
+                            datamat(position_to_row(i,j),12)=cycle;
                         end
             end
         end
+        datamat_=[datamat;datamat_];
         
+        % Remove the invalid nuclei
+        datamat_(ismember(datamat_(:,1),invalid),12)=0;
         % Export the output file if the input file is a string:
         dlmwrite(outfile,datamat_,'precision',6,'Delimiter',delimiter);
         
-        % Compare nuclei life time before and after:
-        life_nuc_=arrayfun(@(i) fun1(nuc.frames(i,:)>0,@sum,0),1:size(nuc.x,1));  % Life time of nuclei after calibrating
+%       % Compare nuclei life time before and after:
+%       life_nuc_=arrayfun(@(i) fun1(nuc.frames(i,:)>0,@sum,0),1:size(nuc.x,1));  % Life time of nuclei after calibrating
+%         
+%       figure;
+%       plot(life_nuc_*dt);hold on;
+%       plot(life_nuc*dt);
+%       ylabel('Nuclei life time (s)');
+%       xlabel('Nuclei');
         figure;
-        plot(life_nuc_*dt);hold on;
-        plot(life_nuc*dt);
-        ylabel('Nuclei life time (s)');
-        xlabel('Nuclei');
+        tphasecount=[];
+        ax=0:50:1500;
+        for cycle=nc_range(2:end)
+            subplot(2,2,cycle-10);
+            idselect=datamat_(datamat_(:,12)==cycle,1);
+            histogram(hist(idselect,unique(idselect))*dt,ax);
+            title(['tphase detected: nc' num2str(cycle)]);
+        end
+        figure;
+        t_bg=[];t_end=[];x=[];
+        for cycle=nc_range(2:end)
+            for i=unique(datamat_(datamat_(:,12)==cycle,1))'
+                t_end(i)=max(datamat_(datamat_(:,1)==i,2));
+                t_bg(i)=min(datamat_(datamat_(:,1)==i,2));
+                x(i)=min((datamat_(datamat_(:,1)==i,3)));
+            end
+        end
+        plot(x(:),[t_bg(:),t_end(:)],'o')
     end
 
     function obj=ffit(p)
@@ -286,6 +334,6 @@ function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,p
             % p(1): max position for y
             % p(2): x that maximize y
             % p(3): speed that y is decreasing
-        obj=sum((yfeed-mitotic_val(p,xfeed)).^2);
+        obj=sum(abs(yfeed-mitotic_val(p,xfeed)));
     end
 end

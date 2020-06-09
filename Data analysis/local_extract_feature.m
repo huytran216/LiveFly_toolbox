@@ -1,4 +1,4 @@
-function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all,yaxis_all,fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
+function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all_full,yaxis_all_full,fearec_all_full]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
 %% Define features to be extracted: Check feature_label.mat for reference
     fea_range=1:numel(feature_label);
 %% Initiating the feature storage
@@ -8,6 +8,8 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
     yrec=[];
     tsrec=[];
 %% Extract the feature values for border detection
+    Nsample_min = 3;    % number of nuclei required per bin to calculate mean properly.
+    
     isplot=0;
     if isplot
         figure('Name',['nc' num2str(cycleno)]);
@@ -24,7 +26,15 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
     fearec_all={};
     xaxis_all={};
     yaxis_all={};
+    
+    fearec_all_full={};
+    xaxis_all_full={};
+    yaxis_all_full={};
+    
     cnt=0;
+    mfearec_all=cell(max(fea_range),max(ts_spec));
+    mxaxis_all=cell(max(fea_range),max(ts_spec));
+    
     for feaidx=fea_range
         for tsidx=ts_spec
             % Take mean curves
@@ -36,16 +46,29 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
                 mfearec_all{feaidx,tsidx}=mfearec_all{feaidx,tsidx}(~tmp);
             end
             % Take individual time point
-                % Take cell id
-                idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));
-                % Take cell position and feature value
-                xaxis=[datamat(idselect).x]*100-50; % No embryo alignment yet
-                yaxis=[datamat(idselect).y]*100; % No embryo alignment yet
-                tmp=arrayfun(@(x) subindex(datamat(x).Feature,feaidx),idselect);
-                % Record all the features
-                fearec_all{feaidx,tsidx}=tmp(tmp>=0);
-                xaxis_all{feaidx,tsidx}=xaxis(tmp>=0);
-                yaxis_all{feaidx,tsidx}=yaxis(tmp>=0);
+                % For specific AP window (for inference only):
+                    % Take cell id
+                    idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx))...
+                        &([datamat(:).x]*100-50)>AP(1)&([datamat(:).x]*100-50)<AP(2));
+                    % Take cell position and feature value
+                    xaxis=[datamat(idselect).x]*100-50; % No embryo alignment yet
+                    yaxis=[datamat(idselect).y]*100; % No embryo alignment yet
+                    tmp=arrayfun(@(x) subindex(datamat(x).Feature,feaidx),idselect);
+                    % Record all the features
+                    fearec_all{feaidx,tsidx}=tmp(tmp>=0);
+                    xaxis_all{feaidx,tsidx}=xaxis(tmp>=0);
+                    yaxis_all{feaidx,tsidx}=yaxis(tmp>=0);
+                % For all AP window (for showing only, not for inference)
+                    % Take cell id
+                    idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));
+                    % Take cell position and feature value
+                    xaxis=[datamat(idselect).x]*100-50; % No embryo alignment yet
+                    yaxis=[datamat(idselect).y]*100; % No embryo alignment yet
+                    tmp=arrayfun(@(x) subindex(datamat(x).Feature,feaidx),idselect);
+                    % Record all the features
+                    fearec_all_full{feaidx,tsidx}=tmp(tmp>=0);
+                    xaxis_all_full{feaidx,tsidx}=xaxis(tmp>=0);
+                    yaxis_all_full{feaidx,tsidx}=yaxis(tmp>=0);
         end
         % 
         cnt=cnt+1;
@@ -93,7 +116,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
             end            
         end
     end
- %% Save the data with normalized feature values:
+ %% Save the data with normalized feature values - for all embryo, no specific AP window
     for tsidx=ts_spec
         % Take cell id
         idselect=find(([datamat(:).cycle]==cycleno)&(([datamat(:).tscnt]==tsidx)));

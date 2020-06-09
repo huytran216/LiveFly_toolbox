@@ -25,7 +25,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     xlim_right=0;
     ylim_up=0;
     ylim_down=0;
-    Icolumn=24;
+    Icolumn=28;
     rm={};
     nclist={};
     range1=1:10001;filename1='Result_file1';
@@ -62,13 +62,26 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     cnt=0;
     while size(datamat1,2)<=10
         cnt=cnt+1;
-        delimiter=delimiter_list{cnt};
-        datamat1=dlmread(fullfile(fullpath,[filename1]),delimiter,0,0);
+        if cnt<=numel(delimiter_list)
+            delimiter=delimiter_list{cnt};
+        else
+            msgbox(['Corupted or non-extant ''' fullpath '''']);
+            break;
+        end
+        try
+            datamat1=dlmread(fullfile(fullpath,[filename1]),delimiter,0,0);
+        catch
+            datamat1=[];
+        end
     end
     datamat1=datamat1(ismember(datamat1(:,2),range1),:);
-    datamat2=dlmread(fullfile(fullpath,[filename2]),delimiter,0,0);
-    datamat2=datamat2(ismember(datamat2(:,2),range2),:);
-    datamat=[datamat1;datamat2];
+    if ~strcmp(filename1,filename2)
+        datamat2=dlmread(fullfile(fullpath,[filename2]),delimiter,0,0);
+        datamat2=datamat2(ismember(datamat2(:,2),range2),:);
+        datamat=[datamat1;datamat2];
+    else
+        datamat=datamat1;
+    end
     clear datamat1 datamat2;
     % Find the time resolution
     dt=datamat(1,13);
@@ -78,9 +91,11 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     APole=datamat(1,19);
     % Extract the background intensity from gaussian fit
     BG=datamat(:,29);
-    [BG,ax]=hist(BG(BG>0),20);
-    [~,BG]=max(BG(2:end-1));
-    BG=ax(BG+1);
+    BG=BG(BG>0);
+    BGsigma = sqrt(var(BG));
+    BG = mean(BG);
+    % Remove spots with weak intensity
+    datamat(datamat(:,25)<=2*BGsigma,[20:30])=0;
 %% Flip the x value if A pole is 1
     if (xlen~=datamat(1,14))&&(ylen~=datamat(1,15))
         display(['Warning about Lx, Ly in movie ' fullpath]);
@@ -243,6 +258,12 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         % Extract the features - no trimming this time
         threshold=0;
         [fearec{i},AdjustedIntensity{i},Adjustedtime{i}]=extract_feature(Irec{i},trec{i},threshold,dt,Imax,censored(i));
+%         if cyclerec{i}==12
+%             'pause'
+%             fearec{i}
+%             length(Irec{i})*dt
+%         end
+        
         trec{i}=trec{i}*dt;
 %         % ALERT IF WEIRD FEATURES ARE DECTED
 %             % Early activating cell (most likely due to aggregrate)

@@ -27,6 +27,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     %       % 0: not censored
     %       % 1: right censored
     %       % 2: left censored
+    %   trange: range of valid time (used only for trimming)
     % Output:
         % res: array of features to be extracted
     %% Set initial parameters if missing

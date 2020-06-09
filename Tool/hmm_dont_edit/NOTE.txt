@@ -1,0 +1,4 @@
+This is a redacted code from HMM_infer_model_bg folder
+
+	(!) do not edit the files from this folder
+	(!) edit the ones in the original folder first, then copy over this folder

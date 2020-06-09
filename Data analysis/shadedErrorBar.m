@@ -1,4 +1,4 @@
-function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
+function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent,singleoutput)
 % function H=shadedErrorBar(x,y,errBar,lineProps,transparent)
 %
 % Purpose 
@@ -49,8 +49,6 @@ function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
 
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-% Error checking    
-error(nargchk(3,5,nargin))
 
 
 %Process y using function handles if needed to make the error bar
@@ -93,12 +91,14 @@ if ~iscell(lineProps), lineProps={lineProps}; end
 
 if nargin<5, transparent=0; end
 
+if nargin<6, singleoutput=0; end 
 
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 % Plot to get the parameters of the line 
+
 H.mainLine=plot(x,y,lineProps{:});
 
 
@@ -159,5 +159,9 @@ if ~holdStatus, hold off, end
 
 
 if nargout==1
-    varargout{1}=H;
+    if singleoutput
+        varargout{1}=H.mainLine;
+    else
+        varargout{1}=H;
+    end
 end

@@ -23,7 +23,7 @@ load('feature_label.mat');
 % Storage movie list
     emptystruct=orderfields(struct('tscnt',[],'Path','','Name','','correction',false, ...
         'nc9',false,'nc10',false,'nc11',false,'nc12',false,'nc13',false,'nc14',false, ...
-        'nc_ref',0,'Nf',0,'dt',0,'Lx',0,'Ly',0,'BG',1,'BG_man',1,...
+        'shift_EL',0,'Nf',0,'dt',0,'Lx',0,'Ly',0,'BG',1,'BG_man',1,...
         'ShiftL',0,'ShiftR',0,'APole',1 ...
         ));
     DatasetList = emptystruct;
@@ -32,7 +32,8 @@ load('feature_label.mat');
 
 % Storage for extracted features
     DatasetFeature=struct('idrec',[],'tsrec',[],'xrec',[],'yrec',[],'fearec',{},'xborder_rec',[],'hborder_rec',[],'wborder_rec',[],'vborder_rec',[],'xaxis_all',[],'yaxis_all',[],'fearec_all',{});
-
+    FitResult = cell(1,2);
+    
 % Record for the heatmap
     heatmapI=struct;   % Heat map with absolute time (unscaled interphase)
     
@@ -54,30 +55,11 @@ load('feature_label.mat');
     tinterphase_min = [10 10 50 100 200 300];       % minimum interphase duration
     tinterphase_max = [1e4 1e4 1e4 1e4 1e4 1e4];    % maximum interphase duration
     fea_int = [8 9];                                % Which feature is intensity
+    trimmed = false;                                % Trimmed traces or not (default = false)
+    
 
-% Default Color Order
-    defcolor = ...
-    [     0   0.4470    0.7410;...
-    0.8500    0.3250    0.0980;...
-    0.9290    0.6940    0.1250;...
-    0.4940    0.1840    0.5560;...
-    0.4660    0.6740    0.1880;...
-    0.3010    0.7450    0.9330;...
-    0.6350    0.0780    0.1840;...
-    1         0         0;...
-    0         1         0;...
-    0         0         1;...
-         0   0.4470    0.7410;...
-    0.8500    0.3250    0.0980;...
-    0.9290    0.6940    0.1250;...
-    0.4940    0.1840    0.5560;...
-    0.4660    0.6740    0.1880;...
-    0.3010    0.7450    0.9330;...
-    0.6350    0.0780    0.1840;...
-    1         0         0;...
-    0         1         0;...
-    0         0         1;...
-    ];
+Nsample_indi_min = 2;   % Number of samples required per bin for individual embryo
+Nsample_all_min = 2;   % Number of samples required per bin for merged embryos
 %% Create and hide the GUI figure as it is being constructed.
 segfigure = figure('Visible','on','Tag','segfigure','Position',[figX1,figY1,figX2,figY2]);
 set ( gcf, 'Color', [0 0 0] )
@@ -92,6 +74,9 @@ mFile = uimenu('Label','File_');
 
     hloadbutton = uimenu(mFile,'Label','Load dataset',...
     'Callback',@hloaddataset_Callback);
+    
+    hloadbutton = uimenu(mFile,'Label','Quick process...',...
+    'Callback',@hquickprocess_Callback);
 
     hsavebutton = uimenu(mFile,'Label','Save dataset',...
     'Callback',@hsavedataset_Callback);
@@ -117,10 +102,10 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
          htable =   uitable('Parent',hp,'Position',[0 0 700 460],...
              'CellSelectionCallback',@htableselection_Callback,...
              'CellEditCallback',@htableedit_Callback);
-         htable.ColumnName = {'Color','Name','Ref cycle',...
+         htable.ColumnName = {'Color','Name','shift_EL',...
              'nc9','nc10','nc11','nc12','nc13','nc14','BG','BG_man'};
          set(htable,'ColumnEditable',logical([0 0 1 1 1 1 1 1 1 0 1]));
-         set(htable,'ColumnWidth',{80 120 60 40 40 40 40 40 40 60 60});
+         set(htable,'ColumnWidth',{60 100 60 40 40 40 40 40 40 60 60});
          % Currently selected row
         crrrow=0;
 %% Create buttons and others
@@ -150,6 +135,10 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     hbrowse = uicontrol('Style','pushbutton','String', 'Browse',...
         'Position',[420,20,90,20],...
         'Callback',@hbrowse_Callback);
+    
+    hbrowse = uicontrol('Style','pushbutton','String', 'Copy path',...
+        'Position',[520,20,90,20],...
+        'Callback',@hcopypath_Callback);
 
 % Set AP axis:
     hmessages_AP = uicontrol('Style','text','String','AP axis range:',...
@@ -171,7 +160,7 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     hmessages_fea_ref = uicontrol('Style','text','String','Align by Feature:',...
         'Position',[730,600,200,20],'FontSize',10, 'HorizontalAlignment','left',...
         'ForegroundColor','white','BackgroundColor','black');
-    hfea_ref = uicontrol('Style','popup','String',{'None','ON'},...
+    hfea_ref = uicontrol('Style','popup','String',{'None','Manual'},...
         'Position',[850,600,70,20],'FontSize',10, 'HorizontalAlignment','left',...
         'Callback',@hset_fea_ref);
 
@@ -253,9 +242,9 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     
     hall_table = uicontrol('Style','pushbutton','String', 'View fit table',...
         'Position',[1090,310,100,30],...
-        'Callback',@hall_table_Callback);
+        'Callback',@hall_table_summary_Callback);
     
-    hall_Slide = uicontrol('Style','pushbutton','String', 'TimeMagnifier...',...
+    hall_slide = uicontrol('Style','pushbutton','String', 'TimeMagnifier...',...
         'Position',[730,270,100,30],...
         'Callback',@hall_TimeMaginifier_Callback);
     
@@ -280,7 +269,7 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
     hshowoption = uitable('Position',[930 10 230 220],...
         'CellEditCallback',@hshowoptionedit_Callback);
     hshowoption.ColumnName = {'Option','Yes?'};
-    showoption_list={'Align',...
+    showoption_list={'Save kymograph movies',...
         'Show fitted Hill curve',...
         'Separate embryos by color',...
         'Show embryo legend',...
@@ -349,13 +338,13 @@ set(segfigure,'Visible','on');
                 DatasetName=FileName_;
                 DatasetPath=PathName_;
                 f=waitbar(0,'Loading');
-                load(fullfile(PathName_,FileName_),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI');
+                load(fullfile(PathName_,FileName_),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI','mf_rec','sf_rec','nf_rec','ef_rec','mf_rec','sf_rec','nf_rec','ef_rec','mf_indi','sf_indi','nf_indi');
                 fitoption_Hill(end+1:4)=0;
                 close(f);
                 % Patch DatasetList if some new field is missing
-                if ~isfield(DatasetList,'nc_ref')   % Reference feature
+                if ~isfield(DatasetList,'shift_EL')   % Reference feature
                     for i=1:numel(DatasetList)
-                        DatasetList(i).nc_ref=0;
+                        DatasetList(i).shift_EL=0;
                     end
                 end
                 if ~isfield(DatasetList,'BG')
@@ -388,6 +377,50 @@ set(segfigure,'Visible','on');
         end
     end
 
+    % Load/Save dataset
+    function hquickprocess_Callback(~,~)
+        % Imput for bulk process
+        Outtext=cell(1,numel(nc_range));
+        Deftext=cell(1,numel(nc_range));
+        if numel(datamat)
+            for i=1:numel(nc_range)
+                Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
+                Deftext{i}=['0 10000'];
+            end
+            dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
+            for i=1:numel(nc_range)
+                tmp=str2num(dlg{i});
+                tcut1(i)=tmp(1);
+                tcut2(i)=tmp(2);
+                if tcut1>=tcut2
+                    msgbox('Invalid input');
+                    return;
+                end
+            end
+        else
+            msgbox('Load movie first');
+            return;
+        end
+        % QUICK PROCESSING
+            % Analyze untrimmed trace
+            trimmed=false;
+                hextractfeature_Callback();
+                hall_kymo_Callback();
+            % Open magnifier
+                h=figure;
+                %try
+                    [tlower,tupper,cycle_range,posborder]=Magnifier(h,heatmapI,binwidth,nc_range(2:end),tcut1(2:end),tcut2(2:end));
+                    for i=1:numel(cycle_range)
+                        heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
+                    end
+                    Re_Extract_feature(cycle_range,tlower,tupper);
+                    trimmed=true;
+                %catch
+                %end
+            % Analyze trimmed trace
+                hextractfeature_Callback();
+    end
+
     function hsavedataset_Callback(~,~)
         if exist(fullfile(DatasetPath,DatasetName),'file')
             if strcmp(questdlg('Overwrite?','Dataset file exist','Yes','No','No'),'Yes')
@@ -400,7 +433,7 @@ set(segfigure,'Visible','on');
         end
         if okwrite
             f=waitbar(0,'Saving');
-            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI');
+            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI','mf_rec','sf_rec','nf_rec','ef_rec','mf_indi','sf_indi','nf_indi');
             close(f);
         end
     end
@@ -415,7 +448,7 @@ set(segfigure,'Visible','on');
             DatasetPath=PathName;
             DatasetName=FileName;
             f=waitbar(0,'Saving');
-            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill');
+            save(fullfile(DatasetPath,DatasetName),'DatasetList','datamat','DatasetFeature','Nmov','AP','fea_ref','binwidth','tinterphase_min','tinterphase_max','fitoption_Hill','heatmapI','mf_rec','sf_rec','nf_rec','ef_rec','mf_indi','sf_indi','nf_indi');
             close(f);
         end
         Update_List;
@@ -554,11 +587,17 @@ set(segfigure,'Visible','on');
             explorer(DatasetList(crrrow).Path);
         end
     end
+
+    function hcopypath_Callback(~,~)
+        if crrrow
+            clipboard('copy',DatasetList(crrrow).Path);
+        end
+    end
     
     function htableedit_Callback(~,~)
         datatmp=htable.Data;
         for i=1:Nmov
-            DatasetList(i).nc_ref=datatmp{i,3};
+            DatasetList(i).shift_EL=datatmp{i,3};
             DatasetList(i).nc9=datatmp{i,4};
             DatasetList(i).nc10=datatmp{i,5};
             DatasetList(i).nc11=datatmp{i,6};
@@ -577,10 +616,8 @@ set(segfigure,'Visible','on');
 
 %% Data extraction
     function hloadmovie_Callback(~,~)
-        f=waitbar(0,'Loading');
         if Nmov
             for i=1:Nmov
-                waitbar((i-1)/Nmov,f);
                 Update_DatasetList(Nmov);
             end
             [datamat,DatasetList]=local_extract(DatasetList);
@@ -588,7 +625,6 @@ set(segfigure,'Visible','on');
             msgbox('No movie loaded');
         end
         Update_List;
-        close(f);
     end
 
     function hsetinterphase_Callback(~,~)
@@ -607,6 +643,7 @@ set(segfigure,'Visible','on');
                 tinterphase_max(i)=tmp(2);
             end
             tinterphase_min(i+1)=str2num(dlg{i+1});
+            trimmed=false;
             refine_tinterphase(tinterphase_min,tinterphase_max);
         else
             msgbox('Load movie first');
@@ -640,8 +677,8 @@ set(segfigure,'Visible','on');
                     idselect=find(([datamat(:).cycle]==cycleno)&([datamat(:).tscnt]==tsidx));
                     tmp=arrayfun(@(x) subindex(datamat(x).Feature,10),idselect);
                     tinterphase=mode(tmp(tmp>0));
-                    tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase*0.80);
-                    tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase*1.20);
+                    tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase*0.70);
+                    tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase*1.30);
                     for i=[tmp1 tmp2]
                         datamat(i).Feature=-ones(1,numel(feature_label));
                     end
@@ -651,7 +688,7 @@ set(segfigure,'Visible','on');
     end
 
     function hextractfeature_Callback(~,~)
-        f=waitbar(0,'Loading');
+        f=waitbar(0,'Fitting features');
         normalize_feature=0;
         if numel(datamat)
             cnt=0;
@@ -665,6 +702,11 @@ set(segfigure,'Visible','on');
             end
         end
         close(f);
+        if trimmed
+            FitResult{2} = DatasetFeature;
+        else
+            FitResult{1} = DatasetFeature;
+        end
         Update_Mean_Curves;
     end
     
@@ -686,7 +728,14 @@ set(segfigure,'Visible','on');
                             ally=DatasetFeature(new_nc_range(cnt)).yaxis_all{fea,crrrow};
                             allf=DatasetFeature(new_nc_range(cnt)).fearec_all{fea,crrrow};
                             h=scatter(allx(:),ally(:),0*allf(:)+20,allf(:),'filled');
+                            map = ones(100,3);
+                            map(:,1)=map(:,1)-linspace(0,1,100)';
+                            map(:,3)=map(:,3)-linspace(0,1,100)';
+                            colormap(map);
                             set(h,'MarkerEdgeColor','k');
+                            set(gca,'YTick',[]);
+                            
+                            ylim([1.1*min(ally(:))-0.1*max(ally(:)),1.1*max(ally(:))-0.1*min(ally(:))]);
                             ylabel(['nc' num2str(nc_range(new_nc_range(cnt)))]);
                             xlim(AP);
                             if cnt==1
@@ -695,6 +744,9 @@ set(segfigure,'Visible','on');
                             if cnt<numel(new_nc_range)
                                 set(gca,'XTick',[]);
                             end
+                            
+                            set(gca,'color','k');
+                            
                             subplot(numel(new_nc_range),2,2*cnt);
                             plot(allx(:),allf(:),'x');
                             xlim(AP);
@@ -732,7 +784,7 @@ set(segfigure,'Visible','on');
     
     function hindi_traces_Callback(~,~)
         Outtext={'ID from:','ID to','Pos from (%):','Pos to (%)','Only ON trace?:','Maximum Intensity'};
-        Deftext={'0','10000','-50','50','0','3000'};
+        Deftext={'0','10000','-50','50','0','30'};
         dlg=inputdlg(Outtext,'Show trace value (s)',[1 50],Deftext);
         
         new_nc_range=find(arrayfun(@(x) getfield(DatasetList(crrrow),['nc' num2str(x)]),nc_range));
@@ -782,7 +834,7 @@ set(segfigure,'Visible','on');
             header{cnt,1}='Name';
             header{cnt,2}=DatasetList(crrrow).Name;
         cnt=cnt+1;
-            header{cnt,1}='dt';        
+            header{cnt,1}='dt';
             header{cnt,2}=DatasetList(crrrow).dt;
         cnt=cnt+1;
             header{cnt,1}='BG intensity';
@@ -869,12 +921,7 @@ set(segfigure,'Visible','on');
                         for feaidx=fea_plot(:)'
                             if numel(DatasetFeature(cnt0).fearec_all{feaidx,tsidx})
                                 cnt=cnt+1;
-                                % Check for border position if needed
-                                if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1)
-                                    xborder=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
-                                else
-                                    xborder=0;
-                                end
+                                xborder=0;
                                 % Begin plotting
                                 subplot(numel(ts_spec),numel(fea_plot),cnt)
                                 plot(DatasetFeature(cnt0).xaxis_all{feaidx,tsidx}-xborder,DatasetFeature(cnt0).fearec_all{feaidx,tsidx},'.b');hold on;
@@ -917,10 +964,11 @@ set(segfigure,'Visible','on');
         end
     end
 
-    function hall_pattern_Callback(~,~)        
+    function hall_pattern_Callback(~,~)
         if numel(datamat)   % If data is loaded
             cnt=0;
             pos_range=[AP(1):AP(2)];
+            pos_range=[-45:45];
             for cycleno=nc_range
                 cnt=cnt+1;
                 ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
@@ -936,11 +984,7 @@ set(segfigure,'Visible','on');
                         cnt2=0;
                         for tsidx=ts_spec
                             cnt2=cnt2+1;
-                            if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1) % Align embryo
-                                xborder=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
-                            else
-                                xborder=0;
-                            end
+                            xborder=0;
                             allx=[allx DatasetFeature(cnt).xaxis_all{fea,tsidx}-xborder];
                             allx_{cnt2}=DatasetFeature(cnt).xaxis_all{fea,tsidx};
                             allf=[allf DatasetFeature(cnt).fearec_all{fea,tsidx}];
@@ -951,7 +995,7 @@ set(segfigure,'Visible','on');
                             for tsidx=ts_spec
                                 cnt2=cnt2+1;
                                 plot(allx_{cnt2},allf_{cnt2}, ...
-                                        'Marker','.','color',defcolor(tsidx,:),'LineStyle','none'); hold on;
+                                        'Marker','.','color',corder(tsidx),'LineStyle','none'); hold on;
                                 leg{cnt2}=['embryo ' num2str(tsidx)];
                             end
                         else
@@ -963,7 +1007,7 @@ set(segfigure,'Visible','on');
                         if showoption_plot(5)   % Show single mean curve
                             hold on;
                             if showoption_plot(9)   % Show standard error instead of standard deviation
-                                errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno}./sqrt(nf_rec{fea,cycleno}),'k');
+                                errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno}./sqrt(nf_rec{fea,cycleno}-1),'k');
                             else
                                 errorbar(pos_range,mf_rec{fea,cycleno},sf_rec{fea,cycleno},'k');
                             end
@@ -973,7 +1017,7 @@ set(segfigure,'Visible','on');
                         if showoption_plot(6)   % Show individual mean curves
                             hold on;
                             for tsidx=ts_spec
-                                plot(pos_range,mf_indi{fea,cycleno,tsidx},'color',defcolor(tsidx,:));
+                                plot(pos_range,mf_indi{fea,cycleno,tsidx},'color',corder(tsidx));
                             end
                         end
                         if showoption_plot(4)   % Show legend
@@ -989,38 +1033,64 @@ set(segfigure,'Visible','on');
 
     function hall_kymo_Callback(~,~)
         if numel(datamat)
+            % Calculate the number of run
+            cnt_=0;
+            for cycleno=nc_range
+                ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
+                cnt_=cnt_+numel(ts_spec);
+            end
+            f=waitbar(0,'Making Kymograph...');
             cnt=0;
             for cycleno=nc_range
-                cnt=cnt+1;
                 ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
-                if numel(ts_spec)
+                if numel(ts_spec)                    
+                    cnt=cnt+numel(ts_spec);
+                    % Update progress bar
+                    waitbar((cnt-1)/cnt_,f);
                     xborder=zeros(1,Nmov);
-                    for tsidx=ts_spec
-                        if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1) % Align embryo
-                            xborder(tsidx)=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
-                        end
-                    end
                     % Get interphase duration:
                     tphase=DatasetFeature(cycleno-8).vborder_rec(10,:)*2;
-                    time_align=0;time_normalize=0;
-                    [Imap,pos_range,time_axis,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align);
+                    time_align=0;
+                    time_normalize=0;
+                    [Imap,Imap_std,Imap_indi,pos_range,time_axis,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align);
                     heatmapI(cycleno-8).Abs_map=Imap;
+                    heatmapI(cycleno-8).Abs_map_std=Imap_std;
+                    heatmapI(cycleno-8).Abs_map_indi=Imap_indi;
                     heatmapI(cycleno-8).Abs_time=time_axis;
                     heatmapI(cycleno-8).Abs_count=Cellcount;
-                    time_align=0;time_normalize=1;
-                    [Imap,pos_range,time_axis,mtphase,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align);
+                    time_align=0;
+                    time_normalize=1;
+                    if showoption_plot(1)
+                        tmpName = DatasetName;
+                        Ymax = max(DatasetFeature(cycleno-8).vborder_rec(7,:)*2);
+                    else
+                        tmpName = '';
+                        Ymax = 0;
+                    end
+                    [Imap,Imap_std,Imap_indi,pos_range,time_axis,mtphase,Cellcount]=local_draw_kymo(datamat,ts_spec,xborder,tphase,cycleno,binwidth,AP,time_normalize,time_align,tmpName,Ymax);
                     heatmapI(cycleno-8).Rel_map=Imap;
+                    heatmapI(cycleno-8).Rel_map_std=Imap_std;
+                    heatmapI(cycleno-8).Rel_map_indi=Imap_indi;
                     heatmapI(cycleno-8).Rel_time=time_axis;
                     heatmapI(cycleno-8).Rel_count=Cellcount;
                     heatmapI(cycleno-8).mtphase=mtphase;
                     heatmapI(cycleno-8).tphase=tphase;
                     heatmapI(cycleno-8).pos_range=pos_range;
+                    % Close all figures
+                    all_figs = findobj(0, 'type', 'figure');
+                    delete(setdiff(all_figs(2:end), segfigure));
                 end
             end
+            close(f);
         end
+        %msgbox('Done. Press TimeMagnifier to view kymograph');
+        trimmed=false;
+        mkdir('tmp');
+        [~,tmp]=fileparts(DatasetName);
+        save(['tmp/' tmp],'pos_range','heatmapI','-append');
     end
 
-    function hall_table_Callback(~,~)
+    function hall_table_summary_Callback(~,~)
         header={};
         header{1,1}='FEATURE:';
         header{2,1}='cycle';
@@ -1033,56 +1103,168 @@ set(segfigure,'Visible','on');
         header{2,6}='s_Hill';
         header{2,8}='s_Width';
         header{2,10}='s_HalfMax';
-        for feaidx=fea_plot(:)'
-            header{1,2}=feature_label{feaidx};
-            outtab=zeros(Nmov*numel(nc_range),10)-1;
-            cnt=0;
-            for cycleidx=1:numel(nc_range)
-                if numel(DatasetFeature(cycleidx).xborder_rec)
-                    xrec=[];
-                    for movidx=1:Nmov
-                        if size(DatasetFeature(cycleidx).hborder_rec,2)>=movidx
-                            if DatasetFeature(cycleidx).hborder_rec(feaidx,movidx)
-                                cnt=cnt+1;
-                                outline=[nc_range(cycleidx) movidx DatasetFeature(cycleidx).xborder_rec(feaidx,movidx) 0 DatasetFeature(cycleidx).hborder_rec(feaidx,movidx) 0 DatasetFeature(cycleidx).wborder_rec(feaidx,movidx) 0 DatasetFeature(cycleidx).vborder_rec(feaidx,movidx) 0];
-                                outtab(cnt,:)=outline;
-                                xrec=[xrec;outline([3 5 7 9])];
+        if trimmed
+            trim_range = [1 2]; % Only show trimmed traces' features
+        else
+            trim_range = [1];   % Only show whole traces' features
+        end
+        for istrim = trim_range
+            for feaidx=fea_plot(:)'
+                header{1,2}=feature_label{feaidx};
+                outtab=zeros(Nmov*numel(nc_range),10)-1;
+                cnt=0;
+                for cycleidx=1:numel(nc_range)
+                    if numel(FitResult{istrim}(cycleidx).xborder_rec)
+                        xrec=[];
+                        for movidx=1:Nmov
+                            if size(FitResult{istrim}(cycleidx).hborder_rec,2)>=movidx
+                                if FitResult{istrim}(cycleidx).hborder_rec(feaidx,movidx)
+                                    cnt=cnt+1;
+                                    outline=[nc_range(cycleidx) movidx FitResult{istrim}(cycleidx).xborder_rec(feaidx,movidx) 0 FitResult{istrim}(cycleidx).hborder_rec(feaidx,movidx) 0 FitResult{istrim}(cycleidx).wborder_rec(feaidx,movidx) 0 FitResult{istrim}(cycleidx).vborder_rec(feaidx,movidx) 0];
+                                    outtab(cnt,:)=outline;
+                                    xrec=[xrec;outline([3 5 7 9])];
+                                end
                             end
                         end
+                        % Mean data
+                        cnt=cnt+1;
+                        outline=[nc_range(cycleidx) 0 mean(xrec(:,1)) sqrt(var(xrec(:,1))) mean(xrec(:,2)) sqrt(var(xrec(:,2))) mean(xrec(:,3)) sqrt(var(xrec(:,3))) mean(xrec(:,4)) sqrt(var(xrec(:,4)))];
+                        outtab(cnt,:)=outline;
+                        % Confidence interval
+                        cnt=cnt+1;
+                        outline=[nc_range(cycleidx) -1 ...
+                            FitResult{istrim}(cycleidx).xborder_CI(feaidx,1) FitResult{istrim}(cycleidx).xborder_CI(feaidx,2) ...
+                            FitResult{istrim}(cycleidx).hborder_CI(feaidx,1) FitResult{istrim}(cycleidx).hborder_CI(feaidx,2) ...
+                            FitResult{istrim}(cycleidx).wborder_CI(feaidx,1) FitResult{istrim}(cycleidx).wborder_CI(feaidx,2) ...
+                            FitResult{istrim}(cycleidx).vborder_CI(feaidx,1) FitResult{istrim}(cycleidx).vborder_CI(feaidx,2) ...
+                            ];
+                        outtab(cnt,:)=outline;
                     end
-                    % Mean data
-                    cnt=cnt+1;
-                    outline=[nc_range(cycleidx) 0 mean(xrec(:,1)) sqrt(var(xrec(:,1))) mean(xrec(:,2)) sqrt(var(xrec(:,2))) mean(xrec(:,3)) sqrt(var(xrec(:,3))) mean(xrec(:,4)) sqrt(var(xrec(:,4)))];
-                    outtab(cnt,:)=outline;
-                    % Confidence interval
-                    cnt=cnt+1;
-                    outline=[nc_range(cycleidx) -1 ...
-                        DatasetFeature(cycleidx).xborder_CI(feaidx,1) DatasetFeature(cycleidx).xborder_CI(feaidx,2) ...
-                        DatasetFeature(cycleidx).hborder_CI(feaidx,1) DatasetFeature(cycleidx).hborder_CI(feaidx,2) ...
-                        DatasetFeature(cycleidx).wborder_CI(feaidx,1) DatasetFeature(cycleidx).wborder_CI(feaidx,2) ...
-                        DatasetFeature(cycleidx).vborder_CI(feaidx,1) DatasetFeature(cycleidx).vborder_CI(feaidx,2) ...
-                        ];
-                    outtab(cnt,:)=outline;
                 end
+                outtab=outtab(1:cnt,:);
+                outxls=mat2cell(outtab,ones(1,size(outtab,1)),ones(1,size(outtab,2)));
+
+                % Put out new figure;
+                if istrim==2
+                    htmp=figure('Name',[feature_label{feaidx}  'for trimmed traces'],'Position',[100 100 800 500]);
+                else
+                    htmp=figure('Name',[feature_label{feaidx}  'for untrimmed traces'],'Position',[100 100 800 500]);
+                end
+                htmptable =   uitable('Parent',htmp,'Position',[0 0 800 500]);
+                htmptable.Data = [header;outxls];
+                set(htmptable,'ColumnEditable',true(1,10))
             end
-            outtab=outtab(1:cnt,:);
-            outxls=mat2cell(outtab,ones(1,size(outtab,1)),ones(1,size(outtab,2)));
-            
-            % Put out new figure;
-            htmp=figure('Name',feature_label{feaidx},'Position',[100 100 800 500]);
-            htmptable =   uitable('Parent',htmp,'Position',[0 0 800 500]);
-            htmptable.Data = [header;outxls];
-            set(htmptable,'ColumnEditable',true(1,10))
+            hall_plot_summary_Callback(istrim);
+        end
+    end
+
+    function hall_plot_summary_Callback(istrim)
+        for feaidx=fea_plot(:)'
+            % Put out new figure for each feature;
+            if istrim==2
+                htmp=figure('Name',[feature_label{feaidx}  'for trimmed traces'],'Position',[100 100 800 500]);
+            else
+                htmp=figure('Name',[feature_label{feaidx}  'for untrimmed traces'],'Position',[100 100 800 500]);
+            end                
+            % Get number of nuclear cycle to plot
+                nplot = 0;
+                for cycleidx=1:numel(nc_range)
+                    if numel(FitResult{istrim}(cycleidx).xborder_rec)
+                        nplot = nplot+1;
+                    end
+                end
+            % Get legend
+                xlb = {};
+                if fitoption_Hill(3)
+                    xlb{1} = 'Border pos*';
+                else
+                    xlb{1} = 'Border pos';
+                end
+                if fitoption_Hill(2)
+                    xlb{2} = 'Hill coeff*';
+                else
+                    xlb{2} = 'Hill coeff';
+                end
+                if fitoption_Hill(1)
+                    xlb{3} = 'Plateau val*';
+                else
+                    xlb{3} = 'Plateau val';
+                end
+            % Plot statistics for each nuclear cycle
+                mfea = [];
+                ubfea=[];
+                lbfea=[];
+                cyclecnt=0;
+                cyclelb={};     % Label for nc
+                for cycleidx=1:numel(nc_range)
+                    if numel(FitResult{istrim}(cycleidx).xborder_rec)
+                        cyclecnt=cyclecnt+1;
+                        % record the feature
+                        xrec=[];
+                        for movidx=1:Nmov
+                            if size(FitResult{istrim}(cycleidx).hborder_rec,2)>=movidx
+                                if FitResult{istrim}(cycleidx).hborder_rec(feaidx,movidx)
+                                    xrec=[xrec;...
+                                        [FitResult{istrim}(cycleidx).xborder_rec(feaidx,movidx) ...
+                                        FitResult{istrim}(cycleidx).hborder_rec(feaidx,movidx) ...
+                                        FitResult{istrim}(cycleidx).vborder_rec(feaidx,movidx)]];
+                                end
+                            end
+                        end
+                        % Mean data
+                            mfea = [mfea; mean(xrec,1)];
+                            fea_std = sqrt(var(xrec,[],1));
+                        % Confidence interval
+                        fea_bound = [FitResult{istrim}(cycleidx).xborder_CI(feaidx,1:2)' ...
+                            FitResult{istrim}(cycleidx).hborder_CI(feaidx,1:2)' ...
+                            FitResult{istrim}(cycleidx).vborder_CI(feaidx,1:2)' ];
+                        % Show standard deviation or bounds
+                            if fitoption_Hill(3)
+                                x_lb(1) = fea_bound(1,1);
+                                x_ub(1) = fea_bound(2,1);
+                            else
+                                x_lb(1) = fea_mean - fea_std(1);
+                                x_ub(1) = fea_mean - fea_std(1);
+                            end
+                            if fitoption_Hill(2)
+                                x_lb(2) = fea_bound(1,2);
+                                x_ub(2) = fea_bound(2,2);
+                            else
+                                x_lb(2) = fea_mean - fea_std(2);
+                                x_ub(2) = fea_mean - fea_std(2);
+                            end
+                            if fitoption_Hill(1)
+                                x_lb(3) = fea_bound(1,3);
+                                x_ub(3) = fea_bound(2,3);
+                            else
+                                x_lb(3) = fea_mean - fea_std(3);
+                                x_ub(3) = fea_mean - fea_std(3);
+                            end
+                            ubfea = [ubfea;x_ub];
+                            lbfea = [lbfea;x_lb];
+                            cyclelb{cyclecnt} = ['nc' num2str(nc_range(cycleidx))];
+                    end
+                end
+            % Plot everything 
+                for j=1:3
+                    subplot(3,1,j);
+                    barplot_bound(mfea(:,j),lbfea(:,j),ubfea(:,j),cyclelb);
+                    ylabel(xlb{j})
+                end
         end
     end
 
     function hall_TimeMaginifier_Callback(~,~)
         h=figure;
-        [tlower,tupper,cycle_range,posborder]=Magnifier(h,heatmapI,binwidth);
-        for i=1:numel(cycle_range)
-            heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
+        try
+            [tlower,tupper,cycle_range,posborder]=Magnifier(h,heatmapI,binwidth);
+            for i=1:numel(cycle_range)
+                heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
+            end
+            Re_Extract_feature(cycle_range,tlower,tupper);
+            trimmed=true;
+        catch
         end
-        Re_Extract_feature(cycle_range,tlower,tupper);
     end
 %% Auxiliary function
     function Re_Extract_feature(cycle_range,tlower,tupper)
@@ -1110,6 +1292,7 @@ set(segfigure,'Visible','on');
     
     function Update_Mean_Curves(~)
         pos_range=[AP(1):AP(2)];
+        pos_range = [-45:45];
         % Get the mean curve for specific nuclear cycle
         if numel(datamat)   % If data is loaded
             % RESET the holders
@@ -1137,11 +1320,7 @@ set(segfigure,'Visible','on');
                         cnt2=0;
                         for tsidx=ts_spec
                             cnt2=cnt2+1;
-                            if fea_ref & DatasetList(tsidx).nc_ref & showoption_plot(1) % Align embryo
-                                xborder=DatasetFeature(DatasetList(tsidx).nc_ref-8).xborder_rec(fea_ref,tsidx);
-                            else
-                                xborder=0;
-                            end
+                            xborder=0;
                             allx=[allx DatasetFeature(cnt).xaxis_all{fea,tsidx}-xborder];
                             allx_{cnt2}=DatasetFeature(cnt).xaxis_all{fea,tsidx}-xborder;
                             allf=[allf DatasetFeature(cnt).fearec_all{fea,tsidx}];
@@ -1155,9 +1334,15 @@ set(segfigure,'Visible','on');
                             for pos=pos_range
                                 cnt3=cnt3+1;
                                 tmp=(allx-pos+binwidth/2).*(allx-pos-binwidth/2)<=0;
-                                mf(cnt3)=mean(allf(tmp));
-                                sf(cnt3)=sqrt(var(allf(tmp)));
-                                nf(cnt3)=numel(tmp);
+                                if sum(tmp)>Nsample_all_min
+                                    mf(cnt3)=mean(allf(tmp));
+                                    sf(cnt3)=sqrt(var(allf(tmp)));
+                                    nf(cnt3)=sum(tmp);
+                                else
+                                    mf(cnt3)=NaN;
+                                    sf(cnt3)=NaN;
+                                    nf(cnt3)=0;
+                                 end
                             end
                             mf_rec{fea,cycleno}=mf;
                             sf_rec{fea,cycleno}=sf;
@@ -1175,7 +1360,7 @@ set(segfigure,'Visible','on');
                                 for pos=pos_range
                                     cnt3=cnt3+1;
                                     tmp=(allx_{cnt2}-pos+binwidth/2).*(allx_{cnt2}-pos-binwidth/2)<=0;
-                                    if numel(tmp)>3
+                                    if sum(tmp)>Nsample_indi_min
                                         mf(cnt3)=mean(allf_{cnt2}(tmp));
                                         sf(cnt3)=sqrt(var(allf_{cnt2}(tmp)));
                                         nf(cnt3)=numel(allf_{cnt2}(tmp));
@@ -1183,19 +1368,26 @@ set(segfigure,'Visible','on');
                                     else
                                         mf(cnt3)=NaN;
                                         sf(cnt3)=NaN;
-                                        nf(cnt3)=NaN;
+                                        nf(cnt3)=0;
                                     end
                                 end
                                 mf_indi{fea,cycleno,tsidx}=mf;
                                 sf_indi{fea,cycleno,tsidx}=sf;
                                 nf_indi{fea,cycleno,tsidx}=nf;
-                            end                      
+                            end
                     end
                 end
             end
-            mkdir('tmp');
             [~,tmp]=fileparts(DatasetName);
-            save(['tmp/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI');
+            if trimmed
+                mkdir('tmp_trimmed');
+                FitRes = FitResult{2};
+                save(['tmp_trimmed/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes');
+            else
+                mkdir('tmp');
+                FitRes = FitResult{1};
+                save(['tmp/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes');
+            end
         end
     end
 
@@ -1203,7 +1395,7 @@ set(segfigure,'Visible','on');
         AP(1)=str2num(get(hAPfrom,'String'));
         AP(2)=str2num(get(hAPto,'String'));
         if (AP(1)>-100)&&(AP(2)>-100)
-            Update_Mean_Curves;
+            %Update_Mean_Curves;
         end
     end
 
@@ -1246,9 +1438,9 @@ set(segfigure,'Visible','on');
         set(hbinwidth,'String',num2str(binwidth));
         datatmp=cell(Nmov,9);
         for i=1:Nmov
-            datatmp{i,1}=['<html><body bgcolor=' rgb2hex(round(defcolor(i,:)*255)) '>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</body></html>'];
+            datatmp{i,1}=['<html><body bgcolor=' rgb2hex(round(corder(i)*255)) '>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</body></html>'];
             datatmp{i,2}=DatasetList(i).Name;
-            datatmp{i,3}=DatasetList(i).nc_ref;
+            datatmp{i,3}=DatasetList(i).shift_EL;
             datatmp{i,4}=DatasetList(i).nc9;
             datatmp{i,5}=DatasetList(i).nc10;
             datatmp{i,6}=DatasetList(i).nc11;

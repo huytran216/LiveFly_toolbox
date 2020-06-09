@@ -1,12 +1,12 @@
 addpath('..\Tool\bfmatlab\');
 
 %% Input folder
-folder='C:\Users\Anakine\Desktop\20181016_1';           % Original movie folder
-mov_in='B6-MS2_800gain_1digitalgain.lsm';              % Original movie name with extension
-mov_out='RED';                      % Maximum projection movie [NO EXTENSION]
+folder='\\zserver.curie.fr\umr3664\equipe_dostatni\g_fernandes\RAW\190108_GF2';           % Original movie folder
+mov_in='Wt-hb-Vk33-M1.lsm';              % Original movie name with extension
+mov_out='RED';                           % Maximum projection movie [NO EXTENSION]
 
 channel=1;               % Channel for Nuclei image (0 or 1)
-n_frame=[1:450];         % Range of frame to be analyzed
+n_frame=[1:374];         % Range of frame to be analyzed
 
 %% Parameters for 3D projection (generally unchanged)
 fsize=3;                 % Size of the filter before creating maximum projection, should be small (~1 or 2) for nc14.
