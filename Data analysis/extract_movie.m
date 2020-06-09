@@ -56,6 +56,11 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     if ~exist('BG_man')
         BG_man=1;
     end
+    % Remove cell within 1%EL near frame anyway
+    xlim_left=25;
+    xlim_right=25;
+    ylim_up=25;
+    ylim_down=25;
 %% Load the data file
     datamat1=[];
     delimiter_list={delimiter,' ','\t',','};
