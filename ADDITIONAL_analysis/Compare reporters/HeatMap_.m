@@ -10,9 +10,11 @@ function parent = HeatMap_(Map,ax,ay,cscale,parent)
     if ~exist('cscale','var')
         cscale=[0 1];
     end
+    surf(linspace(min(ax(:)),max(ax(:)),10),linspace(min(ay(:)),max(ay(:)),10),zeros(10,10),'Parent',parent,'EdgeColor','none');
+    hold on;
     surf(ax,ay,Map,'Parent',parent,'EdgeColor','none');
-    xlim([min(ax) max(ax)]);
-    ylim([min(ay) max(ay)]);
+    xlim([min(ax(:)) max(ax(:))]);
+    ylim([min(ay(:)) max(ay(:))]);
     colormap(hot);
     view([0 0 1]);
     set(parent,'Ydir','reverse');

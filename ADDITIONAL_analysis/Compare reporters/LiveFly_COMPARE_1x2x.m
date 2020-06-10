@@ -37,7 +37,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [2 2];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [1 2 3 10 1 2 3 10];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
 %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
@@ -63,17 +63,23 @@ fea_range=[9];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-32 30]; % for zld
+AP_limit = [-40 30]; % for zld
+
+scanwindow = [-25 20];
 %% Plot stuffs
 ymax=zeros(1,16);
 ymin=zeros(1,16)+1e5;
 rec_fea=[];
+mI_rec = {};
+sI_rec = {};
+pos_rec = {};
 
 h=[];
 hplot = [];
 xborder = []; hborder = []; vborder = []; noembryo = [];
 cnt=0;
 cnt2=0;
+
 for nc=nc_range
     for fea=fea_range
         cnt=cnt+1;
@@ -179,6 +185,25 @@ for nc=nc_range
                 ylabel(feature_label{fea});
                 xlim(AP_limit);
                 hold on;
+            % Plot prediction of position based on expression alone
+                figure(80+original_i);
+                subplot(1,2,1+isBcd1X(i));
+                position_prediction_map(pos_range(flttmp),mtmp,stmp);
+                title(DatasetLabel{i});
+            % Saving for comparison between 1x 2x, unobservable point set
+            % to either or plateau
+                % Fill all NaN
+                
+                mIall = pos_range*0;mIall(flttmp)=fillmissing(mtmp,'nearest');
+                sIall = pos_range*0;sIall(flttmp)=fillmissing(stmp,'nearest');
+                tmpf = find(flttmp.*~isnan(mIall),1,'first');
+                mIall(1:tmpf-1)=nanmean(mtmp(pos_range(flttmp)<scanwindow(1)));
+                sIall(1:tmpf-1)=nanmean(stmp(pos_range(flttmp)<scanwindow(1)));
+                
+                mI_rec{original_i,1+isBcd1X(i)}=mIall;
+                sI_rec{original_i,1+isBcd1X(i)}=sIall;
+                pos_rec{original_i,1+isBcd1X(i)}=pos_range;
+                
         end
         % Make a table out of it: constructs are put vertically
             header={};
@@ -224,3 +249,65 @@ for nc=nc_range
             set(htmptable,'ColumnEditable',true(1,10))
     end
 end
+%% Estimation of displace:
+% Predict new position:
+diff_plot={};
+for i=1:numel(compare_list)/2
+    figure(5);
+    [diff_plot{i},ax,ay]=shift_prediction_map(pos_rec{i,1},mI_rec{i,1},sI_rec{i,1},pos_rec{i,2},mI_rec{i,2},sI_rec{i,2});
+    
+    subplot(121);
+    xlim([-30 20]);
+    ylim([-30 20]);
+    
+    subplot(122);
+    xlim([-30 20]);
+    ylim([-30 20]);
+    tmpfig = [ 88 378 1122  420];
+    set(gcf,'Position',tmpfig);
+    if i==1
+        diff_all = diff_plot{1};
+    else
+        diff_all = diff_all+diff_plot{i};
+    end
+    figure(6);
+    subplot(1,numel(compare_list)/2,i);
+    mDX = [];
+    sDX = [];
+    for j=1:numel(pos_range)
+        mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
+        sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+    end
+    errorbar(pos_range,mDX,sDX);
+    xlim([-30 20]);
+    title(DatasetLabel{i});
+end
+diff_all = diff_all/i;
+%% Summary
+figure;
+subplot(121);
+HeatMap_(diff_all',ax,ay-ax,[0 max(diff_all(:))]);
+set(gca,'YDir','normal');
+xlabel('Original position x (%EL)');
+    ylabel('Predicted shift x''-x (%EL)');
+subplot(122);
+
+    xlim([-30 20]);
+    ylim([-30 20]);
+    mDX = [];
+    sDX = [];
+    for j=1:numel(pos_range)
+        % Cut the tail in the distribution: take 95% of mass distribution
+        [maxpro,midpos] = max(diff_all(j,:));
+        diff_all(j,diff_all(j,:)<maxpro/10)=0;
+        diff_all(j,:)=diff_all(j,:)/sum(diff_all(j,:));
+        
+        mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
+        sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+    end
+    errorbar(pos_range,mDX/log(2),sDX/log(2));
+    xlabel('Original position x (%EL)');
+    ylabel('Effective \lambda (%EL)');
+    xlim([-30 20]);
+    ylim([-20 0]);
+    set(gcf,'Position',tmpfig);
