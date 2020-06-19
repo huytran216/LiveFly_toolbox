@@ -17,7 +17,7 @@ compare_1x2x = false;
 %% Set up data list
 
 dtset = struct('filename','','label','');
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2 vk33';
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2';
 
 dtset(2).filename = 'B6-near';  dtset(2).label = 'B6';
 dtset(3).filename = 'B9-near';  dtset(3).label = 'B9';
@@ -59,11 +59,11 @@ for i=1:numel(compare_list)
     end
 end
 %% Feature to plot, plot settings
-fea_range=[9];
+fea_range=[1];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-32 30]; % for zld
+AP_limit = [-32 20]; % for zld
 %% Plot stuffs
 ymax=zeros(1,16);
 ymin=zeros(1,16)+1e5;
@@ -114,16 +114,12 @@ for nc=nc_range
                 end
                 mf_indi_=mf_indi_./ne_rec;
                 sf_indi_=sqrt(sf_indi_./ne_rec - mf_indi_.^2);
-            % Setup color order:
-                color_order = get(gca,'colororder');
-                
             % Plot mean curve with error
             
                 figure(40);
                 subplot(numel(nc_range),numel(fea_range),cnt);
-                if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[644   144   374   250]);
-                end
+                color_order = get(gca,'colororder');
+                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
                 flttmp = nf_rec{fea,nc}>Nsample;
                 if plot_embryo_error
                     mtmp = mf_indi_(flttmp);
@@ -158,9 +154,7 @@ for nc=nc_range
             % Plot mean curve with error, normalized by maximum value
                 figure(41);
                 subplot(numel(nc_range),numel(fea_range),cnt);
-                if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[644   144   374   250]);
-                end
+                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
                 if shaded_error_bar
                     if compare_1x2x & numel(compare_list)==2
                         if cnt2==1
@@ -177,9 +171,7 @@ for nc=nc_range
             % Plot mean curve without error
                 figure(42);
                 subplot(numel(nc_range),numel(fea_range),cnt);
-                if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[644   144   374   250]);
-                end
+                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
                 plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2);
                 hold on;
         end
@@ -220,11 +212,9 @@ for nc=nc_range
                 barplot_fun = @barplot_bound;
             end
             
-            figure(43);
-            if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[1122   144   374   250]);
-            end
+            figure(43);            
             subplot(numel(nc_range),numel(fea_range),cnt);
+            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(xborder(:,fea,nc,1),xborder(:,fea,nc,2),xborder(:,fea,nc,3),DatasetLabel,AP_limit(1),'h');
             box on;
             xlim(AP_limit);
@@ -232,33 +222,27 @@ for nc=nc_range
             xtickangle(0);
             
             figure(44);
-            if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[1122   144   374   250]);
-            end
             subplot(numel(nc_range),numel(fea_range),cnt);
+            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(hborder(:,fea,nc,1),hborder(:,fea,nc,2),hborder(:,fea,nc,3),DatasetLabel,0);
             box on;
             xtickangle(0);
             ylabel('Hill coefficient');
             
             figure(45);
-            if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[1122   144   374   250]);
-            end
             v1=-log(1/19)./hborder(:,fea,nc,1)*20*2;
             v2=-log(1/19)./hborder(:,fea,nc,2)*20*2;
             v3=-log(1/19)./hborder(:,fea,nc,3)*20*2;
             subplot(numel(nc_range),numel(fea_range),cnt);
+            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(v1,v2,v3,DatasetLabel,0);
             box on;
             xtickangle(0);
             ylabel('Boundary width (%EL)');
             
             figure(46);
-            if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[1122   144   374   250]);
-            end
             subplot(numel(nc_range),numel(fea_range),cnt);
+            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(vborder(:,fea,nc,1),vborder(:,fea,nc,2),vborder(:,fea,nc,3),DatasetLabel,0);
             box on;
             xtickangle(0);
@@ -266,10 +250,8 @@ for nc=nc_range
             % Full boundary position & Width
             
             figure(47);
-            if numel(fea_range)*numel(nc_range)==1
-                    set(gcf,'Position',[1122   144   374   250]);
-            end
             subplot(numel(nc_range),numel(fea_range),cnt);
+            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
             if compare_1x2x
                 btmp=barplot_bound_width_1x2x(xborder(:,fea,nc,1),xborder(:,fea,nc,2),xborder(:,fea,nc,3),v1,v2,v3,DatasetLabel,-50,'h');
             else
@@ -277,7 +259,7 @@ for nc=nc_range
             end
             box on;
             xtickangle(45);
-            ylabel('Boundary position (%EL)');
+            xlabel('Boundary position (%EL)');
         % Make a table out of it: constructs are put vertically
             figure(30);
             header={};
@@ -347,7 +329,6 @@ for i=1:cnt
         ylim([ymin(rec_fea(i)) ymax(rec_fea(i))]);
     end
     set(gca,'XTick',round((AP_limit(1):5:AP_limit(2))/5)*5);
-    set(gcf,'Position',[680   306   304*numel(fea_range)   672]);
 end
 %% Extract interphase sort by nuclear cycles
 tphase_all=cell(1,15);
@@ -400,6 +381,7 @@ for i=1:numel(compare_list)
         for nc=nc_range(1:end-1)
             plot3([-50 50],[avr_step(nc-9) avr_step(nc-9)],[1 1],'LineStyle','--','color',[1 1 1],'LineWidth',2);
         end
+        set(gcf,'Position',[600   10   400   250*numel(nc_range)]);
 end
 %% Extract interphase sort by reporters
 ymax_ = zeros(1,15);
@@ -429,5 +411,6 @@ for i=1:numel(compare_list)
         caxis([0 ymax_(nc)]);
         xlabel('AP axis (%EL)');
         ylabel('Time (s)');
+        set(gcf,'Position',[1200   10   400   250*numel(nc_range)]);
     end
 end
