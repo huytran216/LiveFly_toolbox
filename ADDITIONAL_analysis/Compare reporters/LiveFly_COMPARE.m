@@ -40,7 +40,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
-compare_list = [1 8 9]; isBcd1X = compare_list*0;
+compare_list = [1 2 3 4]; isBcd1X = compare_list*0;
 
 % Set folder containing mean data (contain dash)
 folder={};
@@ -157,6 +157,7 @@ for nc=nc_range
                 hold on;
             % Plot mean curve with error, normalized by maximum value
                 figure(41);
+                subplot(numel(nc_range),numel(fea_range),cnt);
                 if numel(fea_range)*numel(nc_range)==1
                     set(gcf,'Position',[644   144   374   250]);
                 end
@@ -175,10 +176,10 @@ for nc=nc_range
                 hold on;
             % Plot mean curve without error
                 figure(42);
+                subplot(numel(nc_range),numel(fea_range),cnt);
                 if numel(fea_range)*numel(nc_range)==1
                     set(gcf,'Position',[644   144   374   250]);
                 end
-                subplot(numel(nc_range),numel(fea_range),cnt);
                 plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2);
                 hold on;
         end
