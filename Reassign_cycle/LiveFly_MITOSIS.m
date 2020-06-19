@@ -1,6 +1,6 @@
 function []=LiveFly_MITOSIS(mov_folder)
     if nargin==0
-        mov_folder='\\isiserver.curie.net\umr3664\equipe_dostatni\g_fernandes\RAW\191126_GF3\table_summary\';               %indicate the full path movies file
+        mov_folder='\\isiserver.curie.net\umr3664\equipe_dostatni\g_fernandes\RAW\190424_GF2\table_summary\';               %indicate the full path movies file
     end
 
     if strcmp(questdlg('Choose a configuration file?'),'Yes')
