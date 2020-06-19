@@ -13,13 +13,8 @@ dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -
 
 dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = -15;
 dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = -15;
-<<<<<<< HEAD
 dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = -15;
 dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 -28];dtset(5).time_oSS=[0 800];
-=======
-dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[];dtset(4).time_oSS=[];
-dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(4).pos_SS=[-35 -28];dtset(4).time_oSS=[0 800];
->>>>>>> 2ece8403756c04909b75a178f958e46613e3eaad
 dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];
 dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];
 
@@ -32,11 +27,8 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-<<<<<<< HEAD
 compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
-=======
-compare_list =  [1 2 12];                 % For B6-B9-B12 comparison
->>>>>>> 2ece8403756c04909b75a178f958e46613e3eaad
+
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
 cycle_range = [11 12 13];                % Interphase duration
