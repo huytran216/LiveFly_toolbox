@@ -119,7 +119,7 @@ for nc=nc_range
                 figure(40);
                 subplot(numel(nc_range),numel(fea_range),cnt);
                 color_order = get(gca,'colororder');
-                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
+                set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
                 flttmp = nf_rec{fea,nc}>Nsample;
                 if plot_embryo_error
                     mtmp = mf_indi_(flttmp);
@@ -154,7 +154,7 @@ for nc=nc_range
             % Plot mean curve with error, normalized by maximum value
                 figure(41);
                 subplot(numel(nc_range),numel(fea_range),cnt);
-                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
+                set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
                 if shaded_error_bar
                     if compare_1x2x & numel(compare_list)==2
                         if cnt2==1
@@ -171,7 +171,7 @@ for nc=nc_range
             % Plot mean curve without error
                 figure(42);
                 subplot(numel(nc_range),numel(fea_range),cnt);
-                set(gcf,'Position',[300   10   400*numel(fea_range)   250*numel(nc_range)]);
+                set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
                 plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2);
                 hold on;
         end
@@ -214,7 +214,7 @@ for nc=nc_range
             
             figure(43);            
             subplot(numel(nc_range),numel(fea_range),cnt);
-            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
+            set(gcf,'Position',[700   100   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(xborder(:,fea,nc,1),xborder(:,fea,nc,2),xborder(:,fea,nc,3),DatasetLabel,AP_limit(1),'h');
             box on;
             xlim(AP_limit);
@@ -223,7 +223,7 @@ for nc=nc_range
             
             figure(44);
             subplot(numel(nc_range),numel(fea_range),cnt);
-            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
+            set(gcf,'Position',[700   100   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(hborder(:,fea,nc,1),hborder(:,fea,nc,2),hborder(:,fea,nc,3),DatasetLabel,0);
             box on;
             xtickangle(0);
@@ -234,7 +234,7 @@ for nc=nc_range
             v2=-log(1/19)./hborder(:,fea,nc,2)*20*2;
             v3=-log(1/19)./hborder(:,fea,nc,3)*20*2;
             subplot(numel(nc_range),numel(fea_range),cnt);
-            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
+            set(gcf,'Position',[700   100   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(v1,v2,v3,DatasetLabel,0);
             box on;
             xtickangle(0);
@@ -242,7 +242,7 @@ for nc=nc_range
             
             figure(46);
             subplot(numel(nc_range),numel(fea_range),cnt);
-            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
+            set(gcf,'Position',[700   100   400*numel(fea_range)   250*numel(nc_range)]);
             btmp=barplot_fun(vborder(:,fea,nc,1),vborder(:,fea,nc,2),vborder(:,fea,nc,3),DatasetLabel,0);
             box on;
             xtickangle(0);
@@ -251,7 +251,7 @@ for nc=nc_range
             
             figure(47);
             subplot(numel(nc_range),numel(fea_range),cnt);
-            set(gcf,'Position',[900   10   400*numel(fea_range)   250*numel(nc_range)]);
+            set(gcf,'Position',[700   100   400*numel(fea_range)   250*numel(nc_range)]);
             if compare_1x2x
                 btmp=barplot_bound_width_1x2x(xborder(:,fea,nc,1),xborder(:,fea,nc,2),xborder(:,fea,nc,3),v1,v2,v3,DatasetLabel,-50,'h');
             else
@@ -381,7 +381,7 @@ for i=1:numel(compare_list)
         for nc=nc_range(1:end-1)
             plot3([-50 50],[avr_step(nc-9) avr_step(nc-9)],[1 1],'LineStyle','--','color',[1 1 1],'LineWidth',2);
         end
-        set(gcf,'Position',[600   10   400   250*numel(nc_range)]);
+        set(gcf,'Position',[500   100   400   250*numel(nc_range)]);
 end
 %% Extract interphase sort by reporters
 ymax_ = zeros(1,15);
@@ -411,6 +411,6 @@ for i=1:numel(compare_list)
         caxis([0 ymax_(nc)]);
         xlabel('AP axis (%EL)');
         ylabel('Time (s)');
-        set(gcf,'Position',[1200   10   400   250*numel(nc_range)]);
+        set(gcf,'Position',[500   400   400   250*numel(nc_range)]);
     end
 end
