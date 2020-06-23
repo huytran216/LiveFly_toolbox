@@ -27,7 +27,7 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-compare_list =  [2 3 4];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
@@ -36,7 +36,7 @@ avr = [600 750 1100];                 % Mean nc13 duration
 
 check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity = 1;                   % 1 for intensity, 0 for pspot.
+plot_intensity = 0;                   % 1 for intensity, 0 for pspot.
 %% Cook label_list
 DatasetLabel = {dtset(compare_list).label};
 DatasetFile = {dtset(compare_list).filename};

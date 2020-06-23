@@ -275,7 +275,7 @@ for nc=nc_range
             for i=1:numel(compare_list)
                 cnti=cnti+1;
                 header{cnti,1}=DatasetLabel{i};
-                header{cnti,2}=noembryo(i,nc);
+                header{cnti,2}=num2str(noembryo(i,nc));
                 header{cnti,3}=[num2str(xborder(i,fea,nc,1),'%.1f') ' ' char(177) ' ' ...
                     num2str((xborder(i,fea,nc,3) - xborder(i,fea,nc,2))/2,'%.1f')];
                 header{cnti,4}=[num2str(hborder(i,fea,nc,1),'%.1f') ' ' char(177) ' ' ...
