@@ -12,7 +12,7 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};feature_unit={};
-Nfea=15;
+Nfea=17;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -385,7 +385,11 @@ set(segfigure,'Visible','on');
         if numel(datamat)
             for i=1:numel(nc_range)
                 Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
-                Deftext{i}=['0 10000'];
+                if nc_range(i)==13
+                    Deftext{i}=['600 750'];
+                else
+                    Deftext{i}=['0 10000'];
+                end
             end
             dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
             for i=1:numel(nc_range)

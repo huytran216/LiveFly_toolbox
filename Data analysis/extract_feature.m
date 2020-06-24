@@ -17,8 +17,9 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     %       % 12. Absolute Last Activation time
     %       % 13. Absolute Total active duration
     %       % 14. Absolute Total spot duration of existence
-    %       % 15. Absolute Time to max intensity
-    %       % 16. Mean RNA produced (relative time)
+    %       % 15. Absolute Time to max intensity    
+    %       % 16. Mean Spot Intensity 
+    %       % 17. Mean PSpot (not ON)
     %   threshold: threshold to define if x is significant or not
     %   dt: time resolution
     %   Imax: maximum intensity
@@ -131,6 +132,16 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
                     res(11:15)=res(2:6)*dt;
                     res(2:6)=res(2:6)/length(x);
                 end
-        % Mean RNA synthesis rate (absolute time)
-                res(16)=res(8)/dt/length(x);
+        % Mean Spot intensity
+                if res(4)>0
+                    res(16)=mean(x);
+                else
+                    res(16)=0;
+                end
+        % Mean PSpot:
+                if res(4)>0
+                    res(17)=mean(x>0);
+                else
+                    res(17)=0;
+                end
     end

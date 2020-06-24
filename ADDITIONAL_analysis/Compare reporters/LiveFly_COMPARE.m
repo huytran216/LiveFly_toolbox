@@ -40,7 +40,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
-compare_list = [1 2 3 4]; isBcd1X = compare_list*0;
+compare_list = [1 8 9]; isBcd1X = compare_list*0;
 
 % Set folder containing mean data (contain dash)
 folder={};
@@ -59,8 +59,8 @@ for i=1:numel(compare_list)
     end
 end
 %% Feature to plot, plot settings
-fea_range=[1];
-nc_range=[13];
+fea_range=[9];
+nc_range=[11 12 13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
 AP_limit = [-32 20]; % for zld
@@ -146,7 +146,7 @@ for nc=nc_range
                             color=corder(4);
                         end
                     end
-                    h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i}},0.8,1);
+                    h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,1);
                 else
                     h40(cnt2)=errorbar(pos_range(flttmp),mtmp,stmp,'Display',DatasetLabel{i});
                 end
@@ -163,7 +163,7 @@ for nc=nc_range
                             color=corder(4);
                         end
                     end
-                    h41(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp/vborder(i,fea,nc,2),stmp/vborder(i,fea,nc,2),{'color',color,'Display',dtset(i).label},0.8,1);
+                    h41(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp/vborder(i,fea,nc,2),stmp/vborder(i,fea,nc,2),{'color',color,'Display',dtset(i).label,'LineWidth',2},0.8,1);
                 else
                     h41(cnt2)=errorbar(pos_range(flttmp),mtmp/vborder(i,fea,nc,2),stmp/vborder(i,fea,nc,2),'Display',dtset(i).label);
                 end
@@ -332,8 +332,10 @@ for i=1:cnt
 end
 %% Extract interphase sort by nuclear cycles
 tphase_all=cell(1,15);
-ymax_ = zeros(1,15);
+ymax_ = zeros(1,15);            % Maximum intensity For individual reporters
 ymin_ = ones(1,15)*1e5;
+ymax__ = zeros(1,15);           % Maximum intensity For each nuclear cycle
+ymin__ = ones(1,15)*1e5;
 
 time_limit{11} = [0 600];
 time_limit{12} = [0 800];
@@ -346,16 +348,22 @@ for i=1:numel(compare_list)
     hall{i}=[];
     tall{i}=[];
     for nc=nc_range
-        ymax_(compare_list(i)) = max(ymax_(i),max(heatmapI(nc-8).Rel_map{1,2}(:)));
+        
         tphase_all{nc} = [tphase_all{nc} heatmapI(nc-8).tphase];
         hall{i} = [hall{i};heatmapI(nc-8).Rel_map{1,2}];
         tall{i} = [tall{i} avr_step(nc - nc_range(1) + 1)+heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10)];
+        
+        ymax_(compare_list(i)) = max(ymax_(i),max(heatmapI(nc-8).Rel_map{1,2}(:)));
+        ymax__(nc) = max(ymax__(nc),max(heatmapI(nc-8).Rel_map{1,2}(:)));
     end
 end
 
+
 for i=1:numel(compare_list)
     load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'heatmapI','pos_range');
-    h=figure(i);set(h,'Name',['Kymograph ' DatasetLabel{i}]);
+    %h=figure(i);set(h,'Name',['Kymograph ' DatasetLabel{i}]);
+    h= figure(1);
+    subplot(1,numel(compare_list),i);
     for nc=nc_range        
 %       Plot into subplot
 %         subplot(numel(nc_range),1,find(nc_range==nc));
@@ -370,45 +378,38 @@ for i=1:numel(compare_list)
 %         ylabel('Time (s)');
     end
     %       Plot into same plot
-        HeatMap_(hall{i}*0,pos_range,tall{i}*1.5,[0 ymax_(i)]);
+        HeatMap_(hall{i}*0,pos_range,tall{i}*1.5,[0 max(ymax__(:))]);
         hold on;
-        HeatMap_(hall{i},pos_range,tall{i},[0 ymax_(i)]);
+        HeatMap_(hall{i},pos_range,tall{i},[0 max(ymax__(:))]);
+        caxis([0 15])
+        if i~=numel(compare_list)
+            colorbar off
+        end
+        if i==1
+            ylabel('Time (s)');
+        else
+            set(gca,'YTick',[]);
+        end
         xlim(AP_limit);
         ylim([0 sum(avr(nc_range-10))]);
-        caxis([0 ymax_(compare_list(i))]);
-        xlabel('AP axis (%EL)');
-        ylabel('Time (s)');
+        xlabel('AP axis (%EL)');        
         for nc=nc_range(1:end-1)
             plot3([-50 50],[avr_step(nc-9) avr_step(nc-9)],[1 1],'LineStyle','--','color',[1 1 1],'LineWidth',2);
         end
-        set(gcf,'Position',[500   100   400   250*numel(nc_range)]);
+        set(gcf,'Position',[500   100   250*numel(compare_list)   250*numel(nc_range)]);
 end
 %% Extract interphase sort by reporters
-ymax_ = zeros(1,15);
-ymin_ = ones(1,15)*1e5;
-
-time_limit{11} = [0 600];
-time_limit{12} = [0 800];
-time_limit{13} = [0 1100];
-
-for i=1:numel(compare_list)
-    load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'heatmapI','pos_range');
-    for nc=nc_range
-        ymax_(nc) = max(ymax_(nc),max(heatmapI(nc-8).Rel_map{1,2}(:)));
-    end
-end
-
 for i=1:numel(compare_list)
     load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'heatmapI','pos_range');
     for nc=nc_range
         h=figure(nc+10);set(h,'Name',['Kymograph nc' num2str(nc)]);
         subplot(numel(compare_list),1,i);
-        HeatMap_(heatmapI(nc-8).Rel_map{1,2}*0,pos_range,1.5*heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10),[0 ymax_(i)]);
+        HeatMap_(heatmapI(nc-8).Rel_map{1,2}*0,pos_range,1.5*heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10),[0 ymax__(i)]);
         hold on;
-        HeatMap_(heatmapI(nc-8).Rel_map{1,2},pos_range,heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10),[0 ymax_(i)]);
+        HeatMap_(heatmapI(nc-8).Rel_map{1,2},pos_range,heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10),[0 ymax__(i)]);
         xlim(AP_limit);
         ylim(time_limit{nc});
-        caxis([0 ymax_(nc)]);
+        caxis([0 ymax__(nc)]);
         xlabel('AP axis (%EL)');
         ylabel('Time (s)');
         set(gcf,'Position',[500   400   400   250*numel(nc_range)]);
