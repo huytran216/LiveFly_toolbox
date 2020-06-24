@@ -32,9 +32,9 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     % Output:
         % res: array of features to be extracted
     %% Set initial parameters if missing
-    res=-ones(1,16);
+    res=-ones(1,17);
     if nargin==0
-        res=-ones(1,16);
+        res=-ones(1,17);
         return;
     end
     if ~exist('threshold','var')
@@ -52,7 +52,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     
     % Fit invalid cell then don't do anything
     if (censored<0)
-        res=-ones(1,16);
+        res=-ones(1,17);
         return;
     end
     % Remove too dim spots
