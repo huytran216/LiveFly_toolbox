@@ -15,9 +15,8 @@ function [b] = barplot_bound_width(x,x_lb,x_ub,y,y_lb,y_ub,label,baseline,orient
             set(gca,'XTick',1:numel(label),'XTickLabel',label);
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
-            yl = get(gca,'ylim');
-            ylim([baseline yl(2)]);
+            b(1).BaseValue = baseline(1);
+            ylim(baseline);
         end
 
     else
@@ -45,9 +44,9 @@ function [b] = barplot_bound_width(x,x_lb,x_ub,y,y_lb,y_ub,label,baseline,orient
             set(gca,'YTick',1:numel(label),'YTickLabel',label);
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
+            b(1).BaseValue = baseline(1);
             xl = get(gca,'xlim');
-            xlim([baseline xl(2)]);
+            xlim(baseline);
         end
     end
     

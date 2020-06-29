@@ -920,7 +920,7 @@ set(segfigure,'Visible','on');
                     figure('Name',['Dataset: ' DatasetName '. nc' num2str(cycleno)]);
                     cnt=0;
                     yrange={};
-                    ymin=zeros(1,15);ymax=zeros(1,15);
+                    ymin=zeros(1,17);ymax=zeros(1,17);
                     for tsidx=ts_spec
                         for feaidx=fea_plot(:)'
                             if numel(DatasetFeature(cnt0).fearec_all{feaidx,tsidx})
