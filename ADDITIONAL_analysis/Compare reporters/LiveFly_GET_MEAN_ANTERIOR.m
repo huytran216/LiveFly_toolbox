@@ -27,11 +27,11 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-compare_list =  [1 8 9];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
-cycle_range = [11 12 13];                % Interphase duration
+nc_range = [13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
 check_boundary = 0;                   % Scan at the anterior at the boundary
@@ -81,7 +81,7 @@ for i = 1:numel(compare_list)
     nI=[];
     time_first=[];
     %figure;
-    for cycleno=cycle_range
+    for cycleno=nc_range
         ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
         % Get interphase:
         tinterphase(cycleno) = max(heatmapI(cycleno-8).Rel_time);
@@ -196,10 +196,12 @@ for i = 1:numel(compare_list)
         
         % Plot distribution of first spot appearance:
         figure(10);
-        subplot(1,3,cycleno-10);
+        if numel(nc_range)>1
+            subplot(1,numel(nc_range),find(nc_range==cycleno));
+        end
         [tmp,ax] = hist(time_first(cycleno-8,:),0:20:460);
         
-        plot(ax,tmp/sum(tmp),'Display',Dataset,'color',corder(compare_list(i)),'LineWidth',2);
+        plot(ax,tmp/sum(tmp),'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2);
         ylabel('Probability');
         xlabel('Time (s)');
         hold on;
@@ -222,7 +224,7 @@ for i = 1:numel(compare_list)
     tnormalized = [];
     tlinear_prev=0;
     tnormalized_prev = 0;
-    for cycleno=cycle_range
+    for cycleno=nc_range
         tnormalized = [tnormalized tnormalized_prev+tax{cycleno-8}/tax{cycleno-8}(end)*avr(cycleno-10)];
         tnormalized_prev = tnormalized(end);
         tlinear = [tlinear tlinear_prev+tax{cycleno-8}];
@@ -237,7 +239,7 @@ for i = 1:numel(compare_list)
 %     title(Dataset);
     figure(19);
     
-    h19{i}=shadedErrorBar(tnormalized,cell2mat(mIax),cell2mat(sIax)./sqrt(nI(cycleno-8)),{'Display',Dataset,'color',corder(compare_list(i)),'LineWidth',2},0.5);hold on;
+    h19{i}=shadedErrorBar(tnormalized,cell2mat(mIax),cell2mat(sIax)./sqrt(nI(cycleno-8)),{'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2},0.5);hold on;
     xlabel('Time (s)');
     ylabel(ylb);
     % Record for comparison:
@@ -246,47 +248,47 @@ for i = 1:numel(compare_list)
     
     figure(20);
     subplot(211);
-    plot(tlinear,cell2mat(sIax)./cell2mat(mIax),'Marker','.','Display',Dataset);hold on;
+    plot(tlinear,cell2mat(sIax)./cell2mat(mIax),'Marker','.','Display',DatasetLabel{i});hold on;
     xlabel('Time (s)');
     ylabel('CV');
     subplot(212);
-    plot(tnormalized,cell2mat(sIax)./cell2mat(mIax),'Marker','.','Display',Dataset);hold on;
+    plot(tnormalized,cell2mat(sIax)./cell2mat(mIax),'Marker','.','Display',DatasetLabel{i});hold on;
     xlabel('time %');
     ylabel('CV');
     % Compare time to reach steady stades between Dataset in each nc
     figure(30+i);
-    for cycleno=cycle_range
+    for cycleno=nc_range
         sItmp = sIax{cycleno-8}./sqrt(nIax{cycleno-8});
         mItmp = mIax{cycleno-8};
         h30i{cycleno}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',['nc' num2str(cycleno)],'color',corder(cycleno)},0.5);hold on;
     end
     xlabel('normalized time');
     ylabel(['Normalized ' ylb]);
-    title(Dataset);
+    title(DatasetLabel{i});
     legend boxoff
     figure(21);
-    for cycleno=cycle_range
-        if numel(cycle_range)>1
-            subplot(numel(cycle_range),1,find(cycle_range==cycleno));
+    for cycleno=nc_range
+        if numel(nc_range)>1
+            subplot(numel(nc_range),1,find(nc_range==cycleno));
         end
         sItmp = sIax{cycleno-8}./sqrt(nIax{cycleno-8});
         mItmp = mIax{cycleno-8};
-        h21{i}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',Dataset,'color',corder(compare_list(i))},0.5);hold on;
+        h21{i}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',DatasetLabel{i},'color',corder(compare_list(i))},0.5);hold on;
         xlabel('Time (s)');
         ylabel([ylb]);
         %plot(tax{cycleno-8}/max(tax{cycleno-8}),mIax{cycleno-8}/max(mIax{cycleno-8}),'Display',Dataset);hold on;
     end
     
     figure(22);
-    for cycleno=cycle_range
-        if numel(cycle_range)>1
-            subplot(numel(cycle_range),1,find(cycle_range==cycleno));
+    for cycleno=nc_range
+        if numel(nc_range)>1
+            subplot(numel(nc_range),1,find(nc_range==cycleno));
         end
         peak_range = 1:50;
         maxmI(i,cycleno-10) = max(mIax{cycleno-8}(peak_range));
         sItmp = sIax{cycleno-8}/maxmI(i,cycleno-10)/sqrt(nI(cycleno-8));
         mItmp = mIax{cycleno-8}/maxmI(i,cycleno-10);
-        h22{i}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',Dataset,'color',corder(compare_list(i))},0.5);hold on;
+        h22{i}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',DatasetLabel{i},'color',corder(compare_list(i))},0.5);hold on;
         %plot(tax{cycleno-8}/max(tax{cycleno-8}),mIax{cycleno-8}/max(mIax{cycleno-8}),'Display',Dataset);hold on;
         xlabel('Time (s)');
         ylabel(['normalized ' ylb]);
@@ -295,11 +297,11 @@ for i = 1:numel(compare_list)
     % Create legend for comparing between nuclear cycle
     figure(30+i);
     h30i_=[];
-    for cycleno=cycle_range
+    for cycleno=nc_range
         h30i_=[h30i_ h30i{cycleno}.mainLine];
         leg{cycleno}=['nc' num2str(cycleno)];
     end
-    legend(h30i_,leg(cycle_range));
+    legend(h30i_,leg(nc_range));
     legend boxoff;
     %% Get mean traces to get kon, koff
     cycleno=13;
@@ -354,7 +356,7 @@ end
 %legend boxoff
 %% Plot peak intensity:
 figure;bar(maxmI');
-set(gca,'XTickLabel',leg(cycle_range));
+set(gca,'XTickLabel',leg(nc_range));
 legend(DatasetLabel);
 legend boxoff;
 %% Expression ratios:
@@ -369,11 +371,13 @@ figure(10);
 legend show;
 legend boxoff;
 figure(10);
-for cycleno=cycle_range
-    subplot(numel(cycle_range),2,(cycleno-10)*2-1);
+cnt = 0;
+for cycleno=nc_range
+    cnt = cnt + 1;
+    subplot(numel(nc_range),2,cnt*2-1);
     barplot_bound(mT0(cycleno-10,:),mT0_lb(cycleno-10,:),mT0_ub(cycleno-10,:),DatasetLabel);
     ylabel('Mean T0');
-    subplot(numel(cycle_range),2,(cycleno-10)*2);
+    subplot(numel(nc_range),2,cnt*2);
     barplot_bound(sT0(cycleno-10,:),sT0_lb(cycleno-10,:),sT0_ub(cycleno-10,:),DatasetLabel);
     ylabel('Std T0');
 end

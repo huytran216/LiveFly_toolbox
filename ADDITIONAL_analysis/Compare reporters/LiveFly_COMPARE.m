@@ -44,7 +44,7 @@ compare_list = [1 2 3 4]; isBcd1X = compare_list*0;
 
 avr = [600 750 1100];                % Mean nc13 duration
 %% Feature to plot, plot settings
-fea_range=[1];
+fea_range=[16];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
