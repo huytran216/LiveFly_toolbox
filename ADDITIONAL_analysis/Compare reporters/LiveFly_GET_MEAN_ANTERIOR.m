@@ -125,7 +125,7 @@ for i = 1:numel(compare_list)
                     end
                     % Record first spot appearance - error in time alignment
                     tfirst = find(tr>0,1,'first')*dt;
-                    if numel(tfirst)&(tfirst<450)&(tfirst>150)
+                    if numel(tfirst)&(tfirst<500)&(tfirst>150)
                         time_first(cycleno-8,total)=tfirst;
                         trace_all_aligned{total} = tr(tfirst:min(450,numel(tr)));
                         time_all_aligned{total}= min(450,numel(tr))-tr;
@@ -199,10 +199,10 @@ for i = 1:numel(compare_list)
         if numel(nc_range)>1
             subplot(1,numel(nc_range),find(nc_range==cycleno));
         end
-        [tmp,ax] = hist(time_first(cycleno-8,:),0:20:460);
+        [tmp,ax] = ecdf(time_first(cycleno-8,:));
         
-        plot(ax,tmp/sum(tmp),'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2);
-        ylabel('Probability');
+        plot(ax,tmp,'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2);
+        ylabel('CDF(T_0)');
         xlabel('Time (s)');
         hold on;
         
@@ -368,9 +368,14 @@ if numel(compare_list)==2
 end
 %% Plot extracted params for T0 first spot appearance
 figure(10);
+% Plot prediction:
+x = [100:10:500];
+plot(x,normcdf(x,310,50),'LineStyle','--','LineWidth',1,'color','k','Display','N(305 s, 50 s)');
 legend show;
+legend('Location','NorthWest');
 legend boxoff;
-figure(10);
+xlim([100 500]);
+figure(11);
 cnt = 0;
 for cycleno=nc_range
     cnt = cnt + 1;
