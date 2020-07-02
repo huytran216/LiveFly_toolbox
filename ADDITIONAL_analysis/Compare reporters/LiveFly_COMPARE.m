@@ -40,7 +40,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
-compare_list = [1 2 3 4]; isBcd1X = compare_list*0;
+compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
 
 avr = [600 750 1100];                % Mean nc13 duration
 %% Feature to plot, plot settings
@@ -192,7 +192,7 @@ for nc=nc_range
             if nc==nc_range(end)
                 xlabel('AP axis (%EL)');
             end
-            ylabel(['Normalized' feature_label{fea}]);
+            ylabel(['Normalized ' feature_label{fea}]);
             
             figure(42);
             subplot(numel(nc_range),numel(fea_range),cnt);
