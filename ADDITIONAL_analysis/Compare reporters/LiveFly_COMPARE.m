@@ -40,11 +40,11 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
-compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
+compare_list = [2 4 10 12]; isBcd1X = compare_list*0;
 
 avr = [600 750 1100];                % Mean nc13 duration
 %% Feature to plot, plot settings
-fea_range=[16];
+fea_range=[1];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12

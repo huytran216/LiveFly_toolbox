@@ -284,16 +284,16 @@ for i=1:numel(compare_list)/2
 end
 diff_all = diff_all/i;
 %% Summary
-figure;
+figure(107);
 subplot(121);
 HeatMap_(diff_all',ax,ay-ax,[0 max(diff_all(:))]);
 set(gca,'YDir','normal');
 xlabel('Original position x (%EL)');
     ylabel('Predicted shift x''-x (%EL)');
-subplot(122);
-
     xlim([-30 20]);
-    ylim([-30 20]);
+    ylim([-20 0]);
+
+subplot(122);
     mDX = [];
     sDX = [];
     for j=1:numel(pos_range)
@@ -305,9 +305,47 @@ subplot(122);
         mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
         sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
     end
-    errorbar(pos_range,mDX/log(2),sDX/log(2));
+    errorbar(pos_range,mDX,sDX);
     xlabel('Original position x (%EL)');
-    ylabel('Effective \lambda (%EL)');
+    ylabel('Predicted shift x''-x (%EL)');
     xlim([-30 20]);
     ylim([-20 0]);
     set(gcf,'Position',tmpfig);
+%% Fit displacement with a curve:
+    syms x;
+    %y = sym('y'); fun = exp(-x/y);  % Exponential gradient
+    y = sym('y', [1 2]);fun  = (x+y(1))^(-y(2)); % Power gradient
+    
+    ax = pos_range;
+    ax_fit = [-17:10];
+    ratio = 0.5;
+    
+    newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
+        -ax(1)+1+ax_fit,...
+        max([ones(1,numel(ax_fit)); ...
+        min([numel(ax)*ones(1,numel(ax_fit)); ...
+        (-ax(1)+1+ax_fit+round(find_displacement(y0,fun,y,x,ax_fit,ratio)))
+        ])...
+        ])...
+        ))));
+    %[beta_best,f0]=fminsearchbnd(newfun,10,1,100)
+    [beta_best]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100])
+    
+%% Plot the results
+[fun_dx, fun_eval] = find_displacement(beta_best,fun,y,x,[ax_fit],ratio);
+figure(107)
+%subplot(121);
+%plot(ax,fun_eval);
+subplot(122);
+hold on;
+plot(ax_fit,fun_dx,'LineStyle','--','color','k','LineWidth',2);
+%
+figure(108);
+[fun_dx, fun_eval] = find_displacement(beta_best,fun,y,x,[-35:30],ratio);
+hold on;
+subplot(121);
+plot([-35:30],fun_eval/fun_eval(1));
+subplot(122);
+hold on;
+plot([-35:30],fun_dx,'LineStyle','--','color','k','LineWidth',2);
+%% Hybrid pattern:
