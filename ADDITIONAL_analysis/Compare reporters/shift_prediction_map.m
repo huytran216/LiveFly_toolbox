@@ -28,18 +28,18 @@ function [pos_prediction_map,ax,ay] = shift_prediction_map(pos_range1,mIin1, sIi
     end
     [ax,ay] = meshgrid(pos_range1_,pos_range2_);
     figure;
-    subplot(121);
-    HeatMap_(pos_prediction_map',ax,ay,[0 max(pos_prediction_map(:))]);
-    hold on;
-    plot3(pos_range1_(:),pos_range1_(:),pos_range1_(:)*0+1,'LineStyle','--','color','w','LineWidth',2);
-    set(gca,'Ydir','normal');
-    xlabel('Original position x (%EL)');
-    ylabel('Predicted position x'' (%EL)');
-    subplot(122);
+    %subplot(121);
+    %HeatMap_(pos_prediction_map',ax,ay,[0 max(pos_prediction_map(:))]);
+    %hold on;
+    %plot3(pos_range1_(:),pos_range1_(:),pos_range1_(:)*0+1,'LineStyle','--','color','w','LineWidth',2);
+    %set(gca,'Ydir','normal');
+    %xlabel('Original position x (%EL)');
+    %ylabel('Predicted position x'' (%EL)');
+    %subplot(122);
     HeatMap_(pos_prediction_map',ax,ay-ax,[0 max(pos_prediction_map(:))]);
     hold on;
     plot3(pos_range1_(:),pos_range1_(:)*0,pos_range1_(:)*0+1,'LineStyle','--','color','w','LineWidth',2);
     set(gca,'Ydir','normal');
-    xlabel('Original position x (%EL)');
-    ylabel('Predicted shift x''-x (%EL)');
+    xlabel('Original position (%EL)');
+    ylabel('Predicted shift (%EL)');
 end

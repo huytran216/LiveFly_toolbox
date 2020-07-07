@@ -59,11 +59,11 @@ for i=1:numel(compare_list)
     end
 end
 %% Feature to plot, plot settings
-fea_range=[9];
+fea_range=[16];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-40 30]; % for zld
+AP_limit = [-35 20]; % for zld
 
 scanwindow = [-25 20];
 %% Plot stuffs
@@ -153,6 +153,7 @@ for nc=nc_range
                 end
             % Plot mean curve with error
                 figure(20+original_i);
+                set(gcf,'Position',[680   738   284   240]);
                 title(DatasetLabel{original_i});
                 subplot(numel(nc_range),numel(fea_range),cnt);
                 if shaded_error_bar                    
@@ -164,32 +165,13 @@ for nc=nc_range
                 ylabel(feature_label{fea});
                 xlim(AP_limit);
                 hold on;
-            % Plot mean curve with error, normalized by maximum value
-                figure(40+original_i);
-                title(DatasetLabel{original_i});
-                if shaded_error_bar
-                    h41(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp/vborder(i,fea,nc,2),stmp/vborder(i,fea,nc,2),{'color',color,'Display',dtset(i).label},0.8,1);
-                else
-                    h41(cnt2)=errorbar(pos_range(flttmp),mtmp/vborder(i,fea,nc,2),stmp/vborder(i,fea,nc,2),'Display',dtset(i).label,'color',color);
-                end
-                xlabel('AP axis (%EL)');
-                ylabel(feature_label{fea});
-                xlim(AP_limit);
-                hold on;
-            % Plot mean curve without error
-                figure(60+original_i);
-                title(DatasetLabel{original_i});
-                subplot(numel(nc_range),numel(fea_range),cnt);
-                plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2,'color',color);
-                xlabel('AP axis (%EL)');
-                ylabel(feature_label{fea});
-                xlim(AP_limit);
-                hold on;
+            
             % Plot prediction of position based on expression alone
                 figure(80+original_i);
                 subplot(1,2,1+isBcd1X(i));
                 position_prediction_map(pos_range(flttmp),mtmp,stmp);
                 title(DatasetLabel{i});
+                
             % Saving for comparison between 1x 2x, unobservable point set
             % to either or plateau
                 % Fill all NaN
@@ -253,18 +235,19 @@ end
 % Predict new position:
 diff_plot={};
 for i=1:numel(compare_list)/2
-    figure(5);
     [diff_plot{i},ax,ay]=shift_prediction_map(pos_rec{i,1},mI_rec{i,1},sI_rec{i,1},pos_rec{i,2},mI_rec{i,2},sI_rec{i,2});
     
-    subplot(121);
-    xlim([-30 20]);
-    ylim([-30 20]);
+    %subplot(121);
+    %xlim([-30 20]);
+    %ylim([-30 20]);
     
-    subplot(122);
+    %subplot(122);
+    
+    set(gcf,'Position',[680   738   284   240]);
     xlim([-30 20]);
-    ylim([-30 20]);
-    tmpfig = [ 88 378 1122  420];
-    set(gcf,'Position',tmpfig);
+    ylim([-20 10]);
+    caxis([0 0.5]);
+    %colormap(flipud(gray));
     if i==1
         diff_all = diff_plot{1};
     else
@@ -313,8 +296,8 @@ subplot(122);
     set(gcf,'Position',tmpfig);
 %% Fit displacement with a curve:
     syms x;
-    %y = sym('y'); fun = exp(-x/y);  % Exponential gradient
-    y = sym('y', [1 2]);fun  = (x+y(1))^(-y(2)); % Power gradient
+    y = sym('y'); fun = exp(-x/y);  % Exponential gradient
+    %y = sym('y', [1 2]);fun  = (x+y(1))^(-y(2)); % Power gradient
     
     ax = pos_range;
     ax_fit = [-17:10];
@@ -328,8 +311,8 @@ subplot(122);
         ])...
         ])...
         ))));
-    %[beta_best,f0]=fminsearchbnd(newfun,10,1,100)
-    [beta_best]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100])
+    [beta_best,f0]=fminsearchbnd(newfun,10,1,100)
+    %[beta_best]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100])
     
 %% Plot the results
 [fun_dx, fun_eval] = find_displacement(beta_best,fun,y,x,[ax_fit],ratio);
