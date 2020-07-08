@@ -33,7 +33,7 @@ function [c0_grid] = Bcd_gradient_multistep_decay(xax,gridt,D,L)
         % Calculate decay:
         for xidx = 1:numel(gridx)
             dcax_1(xidx) = -cax_1(xidx)/L;
-            dcax_2(xidx) = +cax_1(xidx)/L;
+            dcax_2(xidx) = +cax_1(xidx)/L-cax_2(xidx)/L;
         end
         % Birth only at anterior pole
         dcax_1(1) = dcax_1(1)+1;
