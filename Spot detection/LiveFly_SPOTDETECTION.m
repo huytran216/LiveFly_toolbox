@@ -12,11 +12,12 @@ nuclei_mov='RED';                                   %title of segmented nuclei m
 seg_init = 1;
 seg_end  = 380;
 %select the frame range you want to analyze
-it_start=[250];
-it_end=[260];
+it_start=[1];
+it_end=[380];
 %% Parameters:
 ConfigName=0;
-if strcmp(questdlg('Choose a configuration file?'),'Yes')
+inptmp = questdlg('Choose a configuration file?');
+if strcmp(inptmp,'Yes')
     [ConfigName,PathName,FilterIndex] = uigetfile(fullfile(mov_folder,'*.m'),'Select the configuration file');
     run(fullfile(PathName,ConfigName));
 else
@@ -42,11 +43,15 @@ else
     fact_r=1.2;             % tolerance radius (if fact_r=1) the distance is equal to the radius. fact_r for histone is generally bigger than 1.
 end
 %% Ask some question about debug mode
-if strcmp(questdlg('Enter debug mode to find th1, th2?'),'Yes')
-    th=[0 0];
-    answer=inputdlg('Enter a frame number with spots');
-    it_start=str2double(answer);
-    it_end=it_start;
+inptmp = questdlg('Enter debug mode to find th1, th2?');
+switch inptmp
+    case 'Yes'
+        th=[0 0];
+        answer=inputdlg('Enter a frame number with spots');
+        it_start=str2double(answer);
+        it_end=it_start;
+    case 'Cancel'
+        return;
 end
 %% Brightness adjustment after spot detection
 brightness_ratio=[1.2 1.2]; % Amplify the (1) green and (2) red intensity for better visualization
