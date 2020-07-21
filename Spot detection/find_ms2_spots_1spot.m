@@ -18,10 +18,10 @@ II = bfGetPlane(reader, iPlane);
 
 Lx=size(II,1);
 Ly=size(II,2);
-I3=zeros(size(II,1),size(II,2),z_max);
-raw3=zeros(size(II,1),size(II,2),z_max);
-filtered3=zeros(size(II,1),size(II,2),z_max);
 
+
+filtered3=zeros(size(II,1),size(II,2),z_max); % raw image, with substracted background
+I3=zeros(size(II,1),size(II,2),z_max);  % threshold image
 Ispot=zeros(size(II,1),size(II,2));
 
 
@@ -79,7 +79,6 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
             end
         end
         F_ = (F-Fbg);
-        raw3(:,:,zs)=F_;
         filtered3(:,:,zs)=F_;
         
         if any(th==0)
@@ -150,7 +149,7 @@ detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'
     L3D=bwlabeln(I3,8);                         % Label the spots 3D image
     loc3 = regionprops(L3D,'Area','Centroid');  % Extract the region property
     no=max(max(max(L3D)));                      % Number of spot detected
-    raw2d=max(raw3,[],3);
+    raw2d=max(filtered3,[],3);
     if numel(loc3)>500
         disp([num2str(numel(loc3)) ' spot initially detected. Considering increasing threshold value']);
     else
