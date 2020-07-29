@@ -27,15 +27,11 @@ function [c0_grid] = Bcd_exponential_gradient(xax,gridt,D,L)
     
     for tidx = 2:numel(gridt)
         % Calculate decay:
-        for xidx = 1:numel(gridx)
-            dcax(xidx) = -cax(xidx)/L;
-        end
+        dcax = -cax/L;
         % Birth only at anterior pole
         dcax(1) = dcax(1)+1;
         % Calculate 2nd derivatives over x:
-        for xidx = 2:numel(gridx)-1
-            d2cax(xidx) = D*(cax(xidx-1)+cax(xidx+1)-2*cax(xidx))/2/dx.^2;
-        end
+        d2cax(2:end-1) = D*diff(diff(cax))/dx.^2;
         d2cax(1) = D*(+cax(2)-cax(1))/dx.^2;
         d2cax(end) = D*(-cax(end)+cax(end-1))/dx.^2;
         % Final: 
@@ -43,8 +39,17 @@ function [c0_grid] = Bcd_exponential_gradient(xax,gridt,D,L)
         % Record:
         %cax_rec = [cax_rec;cax];
         if mod(tidx,10000)==2
+            sum(abs(dcax+d2cax))
             semilogy(gridx,cax+1e-10);
             hold on;
+        end
+        
+        if sum(abs(dcax+d2cax))<1e-2
+            figure;
+            semilogy(gridx,cax+1e-10);
+            hold on;
+            semilogy(xax,exp(-xax/lambda),'--');
+            break;
         end
     end
     

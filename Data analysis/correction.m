@@ -21,6 +21,8 @@ rm={};
 %% Nuclei to ignore: enter the ID of the nuclei to ignore
 nclist={66};
 
+%% Trim posterior:
+pixel_ignore_posterior = 1e10; % Ignore all spot with position from pixel_ignore_posterior to posterior pole
 
 % In case we use a hybrid threshold, we have different result file
 % specify range1 and range2 the frame range for differnt result file

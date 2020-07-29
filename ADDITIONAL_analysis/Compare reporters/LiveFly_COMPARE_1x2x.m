@@ -37,10 +37,11 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [1 2 3 10 1 2 3 10];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [2 3 2 3];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
 %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
+%compare_list = [3 3];isBcd1X=[0 1];
 
 % Set folder containing mean data (contain dash)
 folder={};
@@ -234,8 +235,14 @@ end
 %% Estimation of displace:
 % Predict new position:
 diff_plot={};
+diff_grid={};
 for i=1:numel(compare_list)/2
-    [diff_plot{i},ax,ay]=shift_prediction_map(pos_rec{i,1},mI_rec{i,1},sI_rec{i,1},pos_rec{i,2},mI_rec{i,2},sI_rec{i,2});
+    % Ignore points w too little expression:
+%     sI_rec{i,1}(mI_rec{i,1}<max(mI_rec{i,1})/20)=0;
+%     mI_rec{i,1}(mI_rec{i,1}<max(mI_rec{i,1})/20)=0;
+%     sI_rec{i,2}(mI_rec{i,2}<max(mI_rec{i,2})/20)=0;
+%     mI_rec{i,2}(mI_rec{i,2}<max(mI_rec{i,2})/20)=0;
+    [diff_plot{i},ax,ay,diff_grid{i}]=shift_prediction_map(pos_rec{i,1},mI_rec{i,1},sI_rec{i,1},pos_rec{i,2},mI_rec{i,2},sI_rec{i,2});
     
     %subplot(121);
     %xlim([-30 20]);
@@ -245,21 +252,25 @@ for i=1:numel(compare_list)/2
     
     set(gcf,'Position',[680   738   284   240]);
     xlim([-30 20]);
-    ylim([-20 10]);
+    ylim([-30 20]);
     caxis([0 0.5]);
-    %colormap(flipud(gray));
+    colormap(flipud(gray));
     if i==1
         diff_all = diff_plot{1};
+        diff_grid_all = diff_grid{1};
     else
         diff_all = diff_all+diff_plot{i};
+        diff_grid_all = diff_grid_all + diff_grid{1};
     end
     figure(6);
     subplot(1,numel(compare_list)/2,i);
     mDX = [];
     sDX = [];
     for j=1:numel(pos_range)
-        mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
-        sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+        %mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
+        %sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+        mDX(j) = sum(diff_grid{i}(j,:).*pos_range);
+        sDX(j) = sqrt(sum(diff_grid{i}(j,:).*pos_range.^2) - mDX(j).^2);
     end
     errorbar(pos_range,mDX,sDX);
     xlim([-30 20]);
@@ -273,62 +284,93 @@ HeatMap_(diff_all',ax,ay-ax,[0 max(diff_all(:))]);
 set(gca,'YDir','normal');
 xlabel('Original position x (%EL)');
     ylabel('Predicted shift x''-x (%EL)');
-    xlim([-30 20]);
-    ylim([-20 0]);
+    xlim([-30 10]);
+    ylim([-30 10]);
+    colormap(flipud(gray));
 
 subplot(122);
-    mDX = [];
-    sDX = [];
-    for j=1:numel(pos_range)
-        % Cut the tail in the distribution: take 95% of mass distribution
-        [maxpro,midpos] = max(diff_all(j,:));
-        diff_all(j,diff_all(j,:)<maxpro/10)=0;
-        diff_all(j,:)=diff_all(j,:)/sum(diff_all(j,:));
-        
-        mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
-        sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
-    end
-    errorbar(pos_range,mDX,sDX);
-    xlabel('Original position x (%EL)');
+imshow(dualcolormap(diff_grid{1}',diff_grid{2}',[0 0.5],[0 0.5]),'XData',pos_range,'YData',pos_range);
+set(gca,'YDir','normal');
+xlabel('Original position x (%EL)');
     ylabel('Predicted shift x''-x (%EL)');
-    xlim([-30 20]);
-    ylim([-20 0]);
-    set(gcf,'Position',tmpfig);
+    xlim([-30 10]);
+    ylim([-30 10]);
+    
+% subplot(122);
+%     mDX = [];
+%     sDX = [];
+%     for j=1:numel(pos_range)
+%         % Cut the tail in the distribution: take 95% of mass distribution
+%         [maxpro,midpos] = max(diff_all(j,:));
+%         diff_all(j,diff_all(j,:)<maxpro/10)=0;
+%         diff_all(j,:)=diff_all(j,:)/sum(diff_all(j,:));
+%         
+%         mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
+%         sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+%     end
+%     errorbar(pos_range,mDX,sDX);
+%     xlabel('Original position x (%EL)');
+%     ylabel('Predicted shift x''-x (%EL)');
+%     xlim([-30 20]);
+%     ylim([-20 0]);
+    %set(gcf,'Position',tmpfig);
 %% Fit displacement with a curve:
     syms x;
-    y = sym('y'); fun = exp(-x/y);  % Exponential gradient
-    %y = sym('y', [1 2]);fun  = (x+y(1))^(-y(2)); % Power gradient
+    model = 'hybrid';
+    switch model 
+        case 'exp'
+            y = sym('y'); fun = exp(-x/y);  % Exponential gradient
+        case 'hybrid'
+            y = sym('y',[1 3]); fun = exp(-x/y(1)) + y(2)*exp(-x/y(3));  % Two Exponential gradient
+        case 'power'
+            y = sym('y', [1 2]);fun  = (x+y(1))^(-y(2)); % Power gradient
+    end
     
-    ax = pos_range;
-    ax_fit = [-17:10];
+    ax_ = ax(1,:);
+    ax_fit = [-17:0];
     ratio = 0.5;
     
     newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
-        -ax(1)+1+ax_fit,...
+        -ax_(1)+1+ax_fit,...
         max([ones(1,numel(ax_fit)); ...
-        min([numel(ax)*ones(1,numel(ax_fit)); ...
-        (-ax(1)+1+ax_fit+round(find_displacement(y0,fun,y,x,ax_fit,ratio)))
+        min([numel(ax_)*ones(1,numel(ax_fit)); ...
+        (-ax_(1)+1+ax_fit+round(find_displacement(y0,fun,y,x,ax_fit,ratio)))
         ])...
         ])...
         ))));
-    [beta_best,f0]=fminsearchbnd(newfun,10,1,100)
-    %[beta_best]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100])
-    
+    switch model 
+        case 'exp'
+            [beta_best,f0]=fminsearchbnd(newfun,10,1,100);
+        case 'hybrid'
+            [beta_best,f0]=fminsearchbnd(newfun,[5 3 20],[1 0 1],[100 10 100]);
+        case 'power'
+            [beta_best,f0]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100]);
+    end
 %% Plot the results
-[fun_dx, fun_eval] = find_displacement(beta_best,fun,y,x,[ax_fit],ratio);
+beta_best_ = beta_best;
+newfun(beta_best_)
+[fun_dx, fun_eval] = find_displacement(beta_best_,fun,y,x,[-35:30],ratio);
 figure(107)
 %subplot(121);
 %plot(ax,fun_eval);
-subplot(122);
+subplot(121);
 hold on;
-plot(ax_fit,fun_dx,'LineStyle','--','color','k','LineWidth',2);
+plot3([-35:30],fun_dx,[-35:30]*0+1000,'LineStyle','--','color','k','LineWidth',2);
 %
 figure(108);
-[fun_dx, fun_eval] = find_displacement(beta_best,fun,y,x,[-35:30],ratio);
+[fun_dx, fun_eval] = find_displacement(beta_best_,fun,y,x,pos_range,ratio);
 hold on;
 subplot(121);
-plot([-35:30],fun_eval/fun_eval(1));
+semilogy(pos_range,fun_eval/fun_eval(1));
 subplot(122);
 hold on;
-plot([-35:30],fun_dx,'LineStyle','--','color','k','LineWidth',2);
-%% Hybrid pattern:
+plot(pos_range,fun_dx,'LineStyle','--','color','k','LineWidth',2);
+
+%% Transform the axes:
+for i=1:numel(compare_list)/2
+    figure(20+i);
+    mItmp = mI_rec{i,1};
+    postmp = pos_rec{i,1}+fun_dx;
+    plot(postmp,mItmp,'--k');
+end
+

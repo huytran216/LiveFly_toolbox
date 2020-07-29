@@ -28,6 +28,8 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     Icolumn=28;
     rm={};
     nclist={};
+    pixel_ignore_posterior = 1e10;
+    
     range1=1:10001;filename1='Result_file1';
     range2=10002:30000;filename2='Result_file2';
     border13=10000;
@@ -118,6 +120,13 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         datamat(:,16)=datamat(:,17);
         datamat(:,17)=tmp;
     end
+%% Ignore spots beyond pixel_ignore_posterior
+    if ~datamat(1,19)
+        flttmp = datamat(:,xpos_range(1))<pixel_ignore_posterior;
+    else
+        flttmp = datamat(:,xpos_range(1))>=pixel_ignore_posterior;
+    end
+    datamat(flttmp,Icolumn)=0;
 %% Reconstruct cell lineage - See Header.txt for reference
     id=datamat(:,1);
     mother=datamat(:,9);
