@@ -5,14 +5,16 @@ warning off;
 fld='../../Data analysis/';
 load([fld 'feature_label.mat']);
 
-Nsample=1;      % Minimum total nuclei per position
-Nsample_indi=1; % Minimum nuclei per embryo per position
+Nsample_min=2;              % Minimum total nuclei per position
+Nsample_per_embryo_min=2;   % Minimum nuclei per embryo per position
+Nembryo_min = 2;            % Mininum number of embryo per position
 
 plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
 trimmed_trace = 1;      % trimmed trace (1) or not (0)
 smooth_curve = 1;
+normalize_intensity = 0;
 compare_1x2x = false;
 %% Set up data list
 
@@ -63,8 +65,7 @@ end
 fea_range=[16];
 nc_range=[13];
 
-%AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-35 20]; % for zld
+AP_limit = [-32 20]; % for B6-B9-B12
 
 scanwindow = [-25 20];
 %% Plot stuffs
@@ -112,7 +113,7 @@ for nc=nc_range
             % Calculate number of embryo per position
                 for j=1:size(nf_indi,3)
                     if numel(nf_indi{1,nc,j})
-                        ne_rec=ne_rec+(nf_indi{1,nc,j}>Nsample_indi);
+                        ne_rec=ne_rec+(nf_indi{1,nc,j}>=Nsample_per_embryo_min);
                     end
                 end
             % Calculate mean of indi curve:
@@ -121,14 +122,15 @@ for nc=nc_range
                         tmp=mf_indi{fea,nc,j};
                         tmp(isnan(tmp))=0;
                         nf_indi{1,nc,j}(isnan(nf_indi{1,nc,j}))=0;
-                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>Nsample_indi);
-                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>Nsample_indi)).^2;
+                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>=Nsample_per_embryo_min);
+                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>=Nsample_per_embryo_min)).^2;
                     end
                 end
                 mf_indi_=mf_indi_./ne_rec;
                 sf_indi_=sqrt(sf_indi_./ne_rec - mf_indi_.^2);
             % Select if certain bin has enough samples
-                flttmp = nf_rec{fea,nc}>Nsample;
+                flttmp = (nf_rec{fea,nc}>=Nsample_min)&(ne_rec>=Nembryo_min);
+                
                 if plot_embryo_error
                     mtmp = mf_indi_(flttmp);
                     stmp = sf_indi_(flttmp)./sqrt(ne_rec(flttmp)-1);
@@ -145,6 +147,11 @@ for nc=nc_range
                     %stmp = stmp(end:-1:1);
                     %stmp(stmp_tmp)=nan;
                     mtmp(stmp_tmp)=nan;
+                end
+            % Normalize by intensity
+                if normalize_intensity
+                    mtmp = mtmp/vborder(i,fea,nc,1);
+                    stmp = stmp/vborder(i,fea,nc,1);
                 end
             % Determine color based on 1x or 2x
                 if isBcd1X(i)==1
@@ -211,6 +218,9 @@ for nc=nc_range
                 header{cnti,5}=[num2str(v(1),'%.1f') ' ' char(177) ' ' ...
                     num2str((v(3) - v(2))/2,'%.1f')];
                 switch fea
+                    case 16
+                        header{cnti,6}=[num2str(vborder(i,fea,nc,1)/100,'%.1f') ' ' char(177) ' ' ...
+                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2))/100,'%.1f')];
                     case 9
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1)/100,'%.1f') ' ' char(177) ' ' ...
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2))/100,'%.1f')];
@@ -222,7 +232,7 @@ for nc=nc_range
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                     case 1
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.2f') ' ' char(177) ' ' ...
-                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];    
+                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                 end
             end
             % Make the table:
@@ -242,7 +252,10 @@ for i=1:numel(compare_list)/2
 %     mI_rec{i,1}(mI_rec{i,1}<max(mI_rec{i,1})/20)=0;
 %     sI_rec{i,2}(mI_rec{i,2}<max(mI_rec{i,2})/20)=0;
 %     mI_rec{i,2}(mI_rec{i,2}<max(mI_rec{i,2})/20)=0;
-    [diff_plot{i},ax,ay,diff_grid{i}]=shift_prediction_map(pos_rec{i,1},mI_rec{i,1},sI_rec{i,1},pos_rec{i,2},mI_rec{i,2},sI_rec{i,2});
+    pos_range1 = pos_rec{i,1}>=-30;
+    pos_range2 = pos_rec{i,2}>=-30;
+    [diff_plot{i},ax,ay,diff_grid{i}]=shift_prediction_map(pos_rec{i,1}(pos_range1),mI_rec{i,1}(pos_range1),sI_rec{i,1}(pos_range1),...
+        pos_rec{i,2}(pos_range2),mI_rec{i,2}(pos_range2),sI_rec{i,2}(pos_range2));
     
     %subplot(121);
     %xlim([-30 20]);
@@ -266,54 +279,54 @@ for i=1:numel(compare_list)/2
     subplot(1,numel(compare_list)/2,i);
     mDX = [];
     sDX = [];
-    for j=1:numel(pos_range)
+    for j=1:sum(pos_range1)
         %mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
         %sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
-        mDX(j) = sum(diff_grid{i}(j,:).*pos_range);
-        sDX(j) = sqrt(sum(diff_grid{i}(j,:).*pos_range.^2) - mDX(j).^2);
+        mDX(j) = sum(diff_grid{i}(j,:).*pos_range(pos_range1));
+        sDX(j) = sqrt(sum(diff_grid{i}(j,:).*pos_range(pos_range1).^2) - mDX(j).^2);
     end
-    errorbar(pos_range,mDX,sDX);
+    errorbar(pos_range(pos_range1),mDX,sDX);
     xlim([-30 20]);
     title(DatasetLabel{i});
 end
 diff_all = diff_all/i;
-%% Summary
-figure(107);
-subplot(121);
-HeatMap_(diff_all',ax,ay-ax,[0 max(diff_all(:))]);
-set(gca,'YDir','normal');
-xlabel('Original position x (%EL)');
-    ylabel('Predicted shift x''-x (%EL)');
-    xlim([-30 10]);
-    ylim([-30 10]);
-    colormap(flipud(gray));
-
-subplot(122);
-imshow(dualcolormap(diff_grid{1}',diff_grid{2}',[0 0.5],[0 0.5]),'XData',pos_range,'YData',pos_range);
-set(gca,'YDir','normal');
-xlabel('Original position x (%EL)');
-    ylabel('Predicted shift x''-x (%EL)');
-    xlim([-30 10]);
-    ylim([-30 10]);
-    
-% subplot(122);
-%     mDX = [];
-%     sDX = [];
-%     for j=1:numel(pos_range)
-%         % Cut the tail in the distribution: take 95% of mass distribution
-%         [maxpro,midpos] = max(diff_all(j,:));
-%         diff_all(j,diff_all(j,:)<maxpro/10)=0;
-%         diff_all(j,:)=diff_all(j,:)/sum(diff_all(j,:));
-%         
-%         mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
-%         sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
-%     end
-%     errorbar(pos_range,mDX,sDX);
-%     xlabel('Original position x (%EL)');
+% %% Summary
+% figure(107);
+% subplot(121);
+% HeatMap_(diff_all',ax,ay-ax,[0 max(diff_all(:))]);
+% set(gca,'YDir','normal');
+% xlabel('Original position x (%EL)');
 %     ylabel('Predicted shift x''-x (%EL)');
-%     xlim([-30 20]);
-%     ylim([-20 0]);
-    %set(gcf,'Position',tmpfig);
+%     xlim([-30 10]);
+%     ylim([-30 10]);
+%     colormap(flipud(gray));
+% 
+% subplot(122);
+% imshow(dualcolormap(diff_grid{1}',diff_grid{2}',[0 0.5],[0 0.5]),'XData',pos_range,'YData',pos_range);
+% set(gca,'YDir','normal');
+% xlabel('Original position x (%EL)');
+%     ylabel('Predicted shift x''-x (%EL)');
+%     xlim([-30 10]);
+%     ylim([-30 10]);
+%     
+% % subplot(122);
+% %     mDX = [];
+% %     sDX = [];
+% %     for j=1:numel(pos_range)
+% %         % Cut the tail in the distribution: take 95% of mass distribution
+% %         [maxpro,midpos] = max(diff_all(j,:));
+% %         diff_all(j,diff_all(j,:)<maxpro/10)=0;
+% %         diff_all(j,:)=diff_all(j,:)/sum(diff_all(j,:));
+% %         
+% %         mDX(j) = sum(diff_all(j,:)'.*(ay(:,j)-ax(:,j)));
+% %         sDX(j) = sqrt(sum(diff_all(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+% %     end
+% %     errorbar(pos_range,mDX,sDX);
+% %     xlabel('Original position x (%EL)');
+% %     ylabel('Predicted shift x''-x (%EL)');
+% %     xlim([-30 20]);
+% %     ylim([-20 0]);
+%     %set(gcf,'Position',tmpfig);
 %% Fit displacement with a curve:
     syms x;
     model = 'hybrid';
@@ -327,7 +340,7 @@ xlabel('Original position x (%EL)');
     end
     
     ax_ = ax(1,:);
-    ax_fit = [-22:0];
+    ax_fit = [-25:0];
     ratio = 0.5;
     
     newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
@@ -347,30 +360,33 @@ xlabel('Original position x (%EL)');
             [beta_best,f0]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100]);
     end
 %% Plot the results
-beta_best_ = beta_best;
+beta_best_ = [beta_best];
 newfun(beta_best_)
 [fun_dx, fun_eval] = find_displacement(beta_best_,fun,y,x,[-35:30],ratio);
 figure(107)
 %subplot(121);
 %plot(ax,fun_eval);
-subplot(121);
+subplot(1,2,1);
 hold on;
 plot3([-35:30],fun_dx,[-35:30]*0+1000,'LineStyle','--','color','k','LineWidth',2);
 %
 figure(108);
 [fun_dx, fun_eval] = find_displacement(beta_best_,fun,y,x,pos_range,ratio);
+subplot(1,2,1);
 hold on;
-subplot(121);
 semilogy(pos_range,fun_eval/fun_eval(1));
-subplot(122);
+subplot(1,2,2);
 hold on;
 plot(pos_range,fun_dx,'LineStyle','--','color','k','LineWidth',2);
 
 %% Transform the axes:
 for i=1:numel(compare_list)/2
-    figure(20+i);
+    figure(120+i);
     mItmp = mI_rec{i,1};
     postmp = pos_rec{i,1}+fun_dx;
+    plot(pos_rec{i,1},mI_rec{i,1},'-b');hold on;
+    plot(pos_rec{i,2},mI_rec{i,2},'-r');
     plot(postmp,mItmp,'--k');
+    xlim([AP_limit])
 end
 
