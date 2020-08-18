@@ -27,9 +27,9 @@ function [b] = barplot_bound_1x2x(x,lb,ub,label,baseline,orientation)
             set(gca,'XTick',1:numel(label(1:2:end)),'XTickLabel',label(1:end/2));
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
+            b(1).BaseValue = baseline(1);
             yl = get(gca,'ylim');
-            ylim([baseline yl(2)]);
+            ylim([baseline(1) yl(2)]);
         end
 
     else
@@ -53,13 +53,12 @@ function [b] = barplot_bound_1x2x(x,lb,ub,label,baseline,orientation)
             set(gca,'YTick',1:numel(label(end/2+1:end)),'YTickLabel',label(end/2:-1:1));
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
+            b(1).BaseValue = baseline(1);
             xl = get(gca,'xlim');
-            xlim([baseline xl(2)]);
+            xlim([baseline(1) xl(2)]);
         end
     end
     if numel(x)>2
         set(b(1),'FaceColor',corder(2));
         set(b(2),'FaceColor',corder(4));
-    end
-    
+    end  

@@ -327,7 +327,7 @@ xlabel('Original position x (%EL)');
     end
     
     ax_ = ax(1,:);
-    ax_fit = [-17:0];
+    ax_fit = [-22:0];
     ratio = 0.5;
     
     newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...

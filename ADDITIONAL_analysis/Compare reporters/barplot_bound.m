@@ -13,9 +13,9 @@ function [b] = barplot_bound(x,lb,ub,label,baseline,orientation)
             set(gca,'XTick',1:numel(label),'XTickLabel',label);
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
+            b(1).BaseValue = baseline(1);
             yl = get(gca,'ylim');
-            ylim([baseline yl(2)]);
+            ylim([baseline(1) yl(2)]);
         end
 
     else
@@ -30,9 +30,9 @@ function [b] = barplot_bound(x,lb,ub,label,baseline,orientation)
             set(gca,'YTick',1:numel(label),'YTickLabel',label);
         end
         if exist('baseline','var')
-            b(1).BaseValue = baseline;
+            b(1).BaseValue = baseline(1);
             xl = get(gca,'xlim');
-            xlim([baseline xl(2)]);
+            xlim([baseline(1) xl(2)]);
         end
     end
     
