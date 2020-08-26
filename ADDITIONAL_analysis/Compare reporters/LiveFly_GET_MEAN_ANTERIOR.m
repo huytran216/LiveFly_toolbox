@@ -27,7 +27,7 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-compare_list =  [1 2 10 12];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 3];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
@@ -361,7 +361,8 @@ legend(DatasetLabel);
 legend boxoff;
 %% Expression ratios:
 if numel(compare_list)==2
-    figure;plot(tI_rec_tmp{1},mI_rec_tmp{2}(1:numel(mI_rec_tmp{1}))./mI_rec_tmp{1}); ylim([0 3]);
+    tmp = min(numel(mI_rec_tmp{1}),numel(mI_rec_tmp{2}));
+    figure;plot(tI_rec_tmp{1}(1:tmp),mI_rec_tmp{2}(1:tmp)./mI_rec_tmp{1}(1:tmp)); ylim([0 5]);
     hold on; plot(tI_rec_tmp{1},(tI_rec_tmp{1}*0+1)*1.5,'--')
     xlabel('time (s)');
     ylabel('Mean expression ratio');
@@ -503,7 +504,7 @@ display(['Independent fitting']);
 %% Plot individual fits:
 figure;
 cnt= 0;
-[~,Iout]=fitall_(x1,xcrit1,Irec_indi(:),time_rec_(:),fun_1,L);
+[~,Iout]=fitall_(x3,xcrit3,Irec_indi(:),time_rec_(:),fun_1,L);
 for Datasetidx = 1:numel(compare_list)
     cnt = cnt+1;
     subplot(numel(compare_list),1,cnt);

@@ -135,7 +135,7 @@ for it=it_start:it_end
     cla;
     %save the segmented images in the folder segmented_spots
     I_res=double(Ispot_new(:,:,it)+Iadd);
-    imwrite([double(I_total)/256;cat(3,I_res,I_res,I_res)],fullfile(mov_folder,'output_images','img_check.tif'),'tif','compression','none','writemode',writemod); %save the segmented images in the folder segmented_spots
+    imwrite(uint8([double(I_total)/256;cat(3,I_res,I_res,I_res)]),fullfile(mov_folder,'output_images','img_check.tif'),'tif','compression','none','writemode',writemod); %save the segmented images in the folder segmented_spots
 end
 
 %% connect and allocate the infos regarding nuclei and spots (compulsory)

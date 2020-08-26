@@ -39,7 +39,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [2 3 2 3];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [2 3 4 2 3 4];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
 %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
@@ -330,6 +330,7 @@ diff_all = diff_all/i;
 %% Fit displacement with a curve:
     syms x;
     model = 'hybrid';
+    
     switch model 
         case 'exp'
             y = sym('y'); fun = exp(-x/y);  % Exponential gradient
@@ -386,7 +387,7 @@ for i=1:numel(compare_list)/2
     postmp = pos_rec{i,1}+fun_dx;
     plot(pos_rec{i,1},mI_rec{i,1},'-b');hold on;
     plot(pos_rec{i,2},mI_rec{i,2},'-r');
-    plot(postmp,mItmp,'--k');
+    plot(postmp,mItmp,'--g');
     xlim([AP_limit])
 end
 
