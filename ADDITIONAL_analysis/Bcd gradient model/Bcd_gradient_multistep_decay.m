@@ -2,7 +2,7 @@ function [c_grid,gridx] = Bcd_gradient_multistep_decay(xax,gridt,D,L)
 % xax: position axes (in %EL)
 % tax: time axes (in s)
 % D: diffusion coefficient (unit in micron^2/s)
-% L: Protein life time 
+% L: Protein life time (s)
     % convert x %EL to micron
     xax = (xax+50)*5;
     % Define function:
@@ -10,7 +10,7 @@ function [c_grid,gridx] = Bcd_gradient_multistep_decay(xax,gridt,D,L)
     syms t;
     
     % Grid
-    dx = 1;
+    dx = 0.5;
     dt =0.01;
     gridx = 0:dx:500;
     gridt = 0:dt:10000;
@@ -54,7 +54,7 @@ function [c_grid,gridx] = Bcd_gradient_multistep_decay(xax,gridt,D,L)
             derivative12 = [tidx*dt sum(abs(dcax_2+D*d2cax_2/dx^2)) sum(abs(dcax_1+D*d2cax_1/dx^2))]
             semilogy(gridx,cax_2+1e-10); hold on;
             %semilogy(gridx,cax_1+1e-10); hold on;
-            if sum(derivative12(2:3))<1e-2
+            if sum(derivative12(2:3))<1e-4
                 break;
             end
         end
@@ -65,7 +65,7 @@ function [c_grid,gridx] = Bcd_gradient_multistep_decay(xax,gridt,D,L)
     figure;
     semilogy(gridx,cax_1+1e-10,'Display','c1 at SS'); hold on;
     semilogy(gridx,cax_2+1e-10,'Display','c2 at SS'); hold on;
-    semilogy(gridx,cax_1+cax_2+1e-10,'Display','c1+c2 at SS'); hold on;
+    semilogy(gridx,5*cax_1+cax_2+1e-10,'Display','c1+c2 at SS'); hold on;
     semilogy(xax,exp(-xax/lambda),'LineStyle','--','LineWidth',2,'color','k','Display','c1 prediction');
     xlabel('position');
     ylabel('c');

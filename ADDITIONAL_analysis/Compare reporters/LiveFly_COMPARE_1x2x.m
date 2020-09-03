@@ -39,7 +39,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [2 3 4 2 3 4];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [2 2];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
 %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
@@ -341,7 +341,7 @@ diff_all = diff_all/i;
     end
     
     ax_ = ax(1,:);
-    ax_fit = [-25:0];
+    ax_fit = [-10:0]; % Range of scan for shift in 2X, that is used in fitting:
     ratio = 0.5;
     
     newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
@@ -356,7 +356,17 @@ diff_all = diff_all/i;
         case 'exp'
             [beta_best,f0]=fminsearchbnd(newfun,10,1,100);
         case 'hybrid'
-            [beta_best,f0]=fminsearchbnd(newfun,[5 3 20],[1 0 1],[100 10 100]);
+            beta_best = cell(1,16);
+            f0 = zeros(1,16);
+            parfor cnt = 1:16
+                x0 = randbetween([1 0 1],[30 10 30]);
+                [beta_best_,f0_]=fminsearchbnd(newfun,x0,[1 0 1],[30 10 30]);
+                beta_best{cnt} = beta_best_;
+                f0(cnt) = f0_;
+                display([cnt f0(cnt)]);
+            end
+            [f0,cnt]=min(f0);
+            beta_best = beta_best{cnt};
         case 'power'
             [beta_best,f0]=fminsearchbnd(newfun,[35 2],[-ax_fit(1)+1 0.1],[1000 100]);
     end

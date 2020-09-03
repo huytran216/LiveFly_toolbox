@@ -1,4 +1,4 @@
-function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
+function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z)
     % Feature extraction
     % Input:
     %   x: spot intensity over time during phase S.
@@ -59,11 +59,28 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange)
     x(x<threshold)=0;
     %% Trim trace if necessary
     tinterphase=length(x);
-    if exist('trange','var')
-        if trange(2)<=tinterphase*dt
-            x=x(round(trange(1)/dt)+1:round(trange(2)/dt));
-            time=time(round(trange(1)/dt)+1:round(trange(2)/dt));
-        end
+    if ~exist('z','var')
+        z = ones(1,numel(x));
+    end
+    if ~exist('trange','var')
+        trange = [0 10000];
+    end
+    lower_valid = trange(1);
+    upper_valid = trange(2);
+    % if time window is non-trivial
+    if trange(2)<=tinterphase*dt
+        x=x(round(trange(1)/dt)+1:round(trange(2)/dt));
+        time=time(round(trange(1)/dt)+1:round(trange(2)/dt));
+    else
+        upper_valid = tinterphase*dt-100;
+    end
+    if trange(1)==0
+        lower_valid = 100;
+    end
+    %If nuclei out of bound >> ignore
+    if any(z((time>lower_valid)&(time<upper_valid))<0)
+        res=-ones(1,17);
+        return;
     end
     %% Extract features
         % Remove single-frame spots

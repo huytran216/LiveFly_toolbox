@@ -665,8 +665,12 @@ set(segfigure,'Visible','on');
             for cycleno=nc_range
                 cnt=cnt+1;
                 idselect=find([datamat(:).cycle]==cycleno);
+                % Find out nuclei with too short or too long interphase
                 tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase_min(cnt));
                 tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase_max(cnt));
+                % Check if these nuclei is out of z-stack or not:
+                
+                % Set them to invalid
                 for i=[tmp1 tmp2]
                     datamat(i).Feature=-ones(1,numel(feature_label));
                 end
@@ -681,8 +685,10 @@ set(segfigure,'Visible','on');
                     idselect=find(([datamat(:).cycle]==cycleno)&([datamat(:).tscnt]==tsidx));
                     tmp=arrayfun(@(x) subindex(datamat(x).Feature,10),idselect);
                     tinterphase=mode(tmp(tmp>0));
+                    % Find out nuclei with too short or too long interphase
                     tmp1=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)<tinterphase*0.70);
                     tmp2=idselect(arrayfun(@(x) subindex(datamat(x).Feature,10),idselect)>tinterphase*1.30);
+                    % Set them to invalid
                     for i=[tmp1 tmp2]
                         datamat(i).Feature=-ones(1,numel(feature_label));
                     end
@@ -968,6 +974,7 @@ set(segfigure,'Visible','on');
         end
     end
 
+    % Plot patterns in all embryos into one plot
     function hall_pattern_Callback(~,~)
         if numel(datamat)   % If data is loaded
             cnt=0;
@@ -976,7 +983,7 @@ set(segfigure,'Visible','on');
             for cycleno=nc_range
                 cnt=cnt+1;
                 ts_spec=find(arrayfun(@(x) getfield(DatasetList,{x},['nc' num2str(cycleno)]),1:Nmov));
-                if numel(ts_spec)
+                if (numel(ts_spec))&(any(fea_plot))
                     cnt1=0;
                     figure('Name',['Dataset: ' DatasetName '. nc' num2str(cycleno) ]);
                     for fea=fea_plot(:)'
@@ -1288,7 +1295,7 @@ set(segfigure,'Visible','on');
             if cycle_range_(datamat(i).cycle)
                 if (datamat(i).Feature(1)>=0)&&(tupper_(datamat(i).tscnt,datamat(i).cycle))
                     datamat(i).Feature=extract_feature(datamat(i).Intensity,datamat(i).time,...
-                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)]);
+                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec);
                 end
             end
         end
@@ -1412,6 +1419,7 @@ set(segfigure,'Visible','on');
     end
 
     function Update_DatasetList(idx)
+        pixel_ignore_posterior = 0;
         filename=fullfile(DatasetList(idx).Path,'correction.m');
         C1 = strsplit(DatasetList(idx).Path,'/');
         C2 = strsplit(DatasetList(idx).Path,'\');

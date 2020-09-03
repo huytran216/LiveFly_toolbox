@@ -1,4 +1,4 @@
-function [nuc,xfinrec,tfinrec,pfinrec]=reassign_cycle(nuc,dt,reso,drift_thresh,patch_crit,nc_range,nc_info,delimiter)
+function [datamat_,outfile]=reassign_cycle(nuc,dt,reso,drift_thresh,patch_crit,nc_range,nc_info,delimiter)
 % Find t0 of the nuclei cycle:
     % nuc: nuclear information or the output file
     % dt: time resolution (in second)

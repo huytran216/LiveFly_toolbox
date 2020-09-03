@@ -95,7 +95,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
                     hborder_CI(feaidx,1:2)=[1e10 1e10];
                     wborder_CI(feaidx,1:2)=[0 0];
                     vborder_CI(feaidx,1:2)=ones(1,2)*mode(fearec_all{feaidx,ts})/2;
-                end                
+                end
             else
                 erroroption_=[1 1 1 1];
                 if ~fitoption(4)

@@ -3,7 +3,7 @@
 3. "x" x position
 4. "y" y postition
 5. "raduis" raidus of the segmented nucleus
-6. "ecc" eccentricity
+6. "ecc" eccentricity - Reused for z position for nuclei centroid
 7. "angle" angle
 8. "clone" = "id"
 9. "mother_id" id of its mother (nothing for first cycle)

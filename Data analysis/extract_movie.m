@@ -1,4 +1,4 @@
-function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG,ShiftL,ShiftR,APole]=extract_movie(fullpath,tinterphase,BG_man)
+function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG,ShiftL,ShiftR,APole]=extract_movie(fullpath,tinterphase,BG_man)
     % Extract the features (1:8) from the time series
     % Input:
     %    % datamat: input matrix or path to data file
@@ -21,11 +21,14 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     delimiter='a';
     xlen=0;
     ylen=0;
+    zlen=0;
     xlim_left=0;
     xlim_right=0;
     ylim_up=0;
     ylim_down=0;
     Icolumn=28;
+    zPosColumn = 6;
+    zratio = 3.8071;
     rm={};
     nclist={};
     pixel_ignore_posterior = 1e10;
@@ -103,6 +106,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     BG = mean(BG);
     % Remove spots with weak intensity
     datamat(datamat(:,25)<=2*BGsigma,[20:30])=0;
+    % Nuclei with out of bound spot is set to 0:
 %% Flip the x value if A pole is 1
     if (xlen~=datamat(1,14))&&(ylen~=datamat(1,15))
         display(['Warning about Lx, Ly in movie ' fullpath]);
@@ -127,6 +131,10 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
         flttmp = datamat(:,xpos_range(1))>=pixel_ignore_posterior;
     end
     datamat(flttmp,Icolumn)=0;
+%% Find egglength and nuclei size:
+    EggLen = (xlen+datamat(1,16)+datamat(1,17));
+    NucSize = EggLen*0.015/zratio; % Unit in zstack
+    
 %% Reconstruct cell lineage - See Header.txt for reference
     id=datamat(:,1);
     mother=datamat(:,9);
@@ -143,11 +151,15 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
     trec=cell(max(id),1);       % Record frame
     cyclerec=cell(max(id),1);   % Record cell cycle
     fearec=cell(max(id),1);     % Record features
-    xrec=cell(max(id),1);       % Record nuclei position
-    yrec=cell(max(id),1);       % Record nuclei position
+    xrec=cell(max(id),1);       % Record nuclei position (in pixel)
+    yrec=cell(max(id),1);       % Record nuclei position (in pixel)
+    zrec=cell(max(id),1);       % Record nuclei position (in pixel)
+    x=zeros(max(id),1);         % Record mean nuclei position  (in EL)
+    y=zeros(max(id),1);         % Record mean nuclei position  (in EL)
+    z=zeros(max(id),1);         % Record mean nuclei position  (in EL)
     xspotrec=cell(max(id),1);   % Record spot position
     yspotrec=cell(max(id),1);   % Record spot position
-    sizerec=cell(max(id),1);    % Record nuclei size
+    sizerec=cell(max(id),1);    % Record nuclei size (in pixel)
 
     Imax=[];                    % Record maximum intensity
     tmax=max([datamat(:,2)])-1;
@@ -174,11 +186,31 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,xrec,yrec,sizerec,
             Ival=0;
         end
         Irec{datamat(i,1)}=[Irec{datamat(i,1)} Ival];
+        % If zposition is not known >> default = middle z stack:
+        if (datamat(i,zPosColumn)>=0)&&(datamat(i,zPosColumn)<1000)
+            datamat(i,zPosColumn) = 40020;
+        end
+        % Nuclei that in middle 
+        if datamat(i,zPosColumn)>0
+            z_max_ = floor(datamat(i,zPosColumn)/1000);
+            z_ = mod(datamat(i,zPosColumn),1000);
+            if (z_<NucSize/2)||(z_max_-z_<(z_<NucSize/2))
+                datamat(i,zPosColumn) = -1;
+            end
+        end
         % Calculate the cell position (%) along the AP axis (x)
         xrec{datamat(i,1)}=[xrec{datamat(i,1)} datamat(i,3)];
         yrec{datamat(i,1)}=[yrec{datamat(i,1)} datamat(i,4)];
-        x(datamat(i,1))=mean((datamat(i,3)+datamat(i,16))./(xlen+datamat(i,16)+datamat(i,17)));
-        y(datamat(i,1))=mean(datamat(i,4)./((ylen+datamat(i,16)+datamat(i,17))));
+        zrec{datamat(i,1)}=[zrec{datamat(i,1)} datamat(i,zPosColumn)];
+        
+        weight_pos = (1:numel(xrec{datamat(i,1)}));weight_pos = weight_pos/sum(weight_pos);
+        weight_pos_ = zeros(1,numel(xrec{datamat(i,1)}));weight_pos_(end)=1;
+%         if numel(weight_pos)>30
+%             [(sum(weight_pos.*xrec{datamat(i,1)})+datamat(i,16))./EggLen; (sum(weight_pos_.*xrec{datamat(i,1)})+datamat(i,16))./EggLen;]
+%         end
+        x(datamat(i,1))=(sum(weight_pos.*xrec{datamat(i,1)})+datamat(i,16))./EggLen;
+        y(datamat(i,1))=(sum(weight_pos.*yrec{datamat(i,1)}))./ EggLen;
+        z(datamat(i,1))= -1; % Unused;
         % Calculate the relative spot position from the nuclei center
         xspotrec{datamat(i,1)}=[xspotrec{datamat(i,1)} datamat(i,3)-datamat(i,20)];
         yspotrec{datamat(i,1)}=[yspotrec{datamat(i,1)} datamat(i,4)-datamat(i,21)];

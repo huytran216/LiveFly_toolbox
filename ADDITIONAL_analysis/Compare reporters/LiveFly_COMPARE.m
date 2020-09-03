@@ -39,7 +39,7 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
 compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
-compare_list = [2 2];isBcd1X=[0 1];
+compare_list = [1 2 3 4];isBcd1X=[0 0 0 0];
 %compare_list = [2 4 10 12]; isBcd1X = compare_list*0;
 
 
@@ -49,7 +49,7 @@ fea_range=[16];
 nc_range=[13];
 
 %AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-32 20]; % for zld
+AP_limit = [-30 20]; % for zld
 %% Set folder containing mean data (contain dash)
 folder={};
 folder{1}='tmp/';

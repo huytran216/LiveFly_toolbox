@@ -1,9 +1,23 @@
-function []=LiveFly_MITOSIS(mov_folder)
+function []=LiveFly_MITOSIS(mov_folder,find_nuclei_z_position,automatic_flag)
+    addpath('..\Tool\bfmatlab\');
     if nargin==0
-        mov_folder='\\isiserver.curie.net\umr3664\equipe_dostatni\g_fernandes\RAW\190424_GF2\table_summary\';               %indicate the full path movies file
+        mov_folder = clipboard('paste');
+        if ~findstr(mov_folder,'table_summary')
+            mov_folder='\\isiserver.curie.net\umr3664\equipe_dostatni\g_fernandes\RAW\190424_GF2\table_summary\';               %indicate the full path movies file
+        end
+        find_nuclei_z_position = 1;
+        automatic_flag = true;
     end
-
-    if strcmp(questdlg('Choose a configuration file?'),'Yes')
+    warning off;
+    if ~exist('automatic_flag','var')
+        automatic_flag = false;
+    end
+    if ~automatic_flag
+        if strcmp(questdlg('Choose a configuration file?'),'Yes')
+            automatic_flag = true;
+        end
+    end
+    if automatic_flag
         % If there is only one config file
         listing = dir(mov_folder);
         ConfigName='';
@@ -46,4 +60,17 @@ function []=LiveFly_MITOSIS(mov_folder)
         patch_after=150;    % Roughly equal last spot till mitosis (in second)
         min_percent=70;     % Minimum trace length/interphase duration to consider for correction (in %). Must be greater than 50.
     %% Run the analysis
-    reassign_cycle(nuc,dt,x_resolution,drift_thresh,[patch_before patch_after min_percent],cycle_range);
+    [datamat,outfile]=reassign_cycle(nuc,dt,x_resolution,drift_thresh,[patch_before patch_after min_percent],cycle_range);
+    
+    if ~exist('find_nuclei_z_position','var')
+        return;
+    end
+    if ~find_nuclei_z_position
+        return;
+    end
+    %% Find z-position:
+    
+    zratio = z_resolution/x_resolution;
+    findzposition(mov_folder,main_mov,datamat,outfile,zratio);
+    display('Done');
+    
