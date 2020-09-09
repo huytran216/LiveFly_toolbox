@@ -18,8 +18,8 @@ dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 
 dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];
 dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];
 
-dtset(8).filename = 'hb-II';  dtset(8).label = 'hb-ii';  dtset(8).pos_SS=[-32 -25];dtset(8).time_oSS=[0 800];dtset(8).pos_boundary = -8.4;
-dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'hb-iii';  dtset(9).pos_SS=[-32 -27];dtset(9).time_oSS=[0 800];dtset(9).pos_boundary = -10;
+dtset(8).filename = 'hb-II';  dtset(8).label = 'rand II';  dtset(8).pos_SS=[-32 -25];dtset(8).time_oSS=[0 800];dtset(8).pos_boundary = -8.4;
+dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'rand. III';  dtset(9).pos_SS=[-32 -27];dtset(9).time_oSS=[0 800];dtset(9).pos_boundary = -10;
 
 dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';  dtset(10).pos_SS=[-32 -25];dtset(10).time_oSS=[0 800];dtset(10).pos_boundary = -15;
 
@@ -34,9 +34,11 @@ isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 nc_range = [13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
-check_boundary = 1;                   % Scan at the anterior at the boundary
+check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity = 0;                   % 1 for intensity, 0 for pspot.
+plot_intensity =2;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+
+only_ON = 1;                          % Apply only to nuclei with ON signals
 %% Cook label_list
 DatasetLabel = {dtset(compare_list).label};
 DatasetFile = {dtset(compare_list).filename};
@@ -57,9 +59,15 @@ scale_time = 1;                     % Scaling interphase by mean interphase dura
         case 0
             ylb = 'PSpot';
         case 1
-            ylb = 'Intensity per nucleus';
+            ylb = 'Loci Intensity';
         case 2
-            ylb = 'Intensity per spot';
+            ylb = 'Spot Intensity';
+    end
+    switch only_ON
+        case 0 
+            on_label = '';
+        case 1 
+            on_label = ', ON';
     end
 %% Begin analyzing
 Irec_indi = {};
@@ -117,12 +125,7 @@ for i = 1:numel(compare_list)
                     % Get traces
                     tr = interp1([datamat(id).time-datamat(id).time(1) 1e5],[datamat(id).Intensity -1e10],time_ax*tphase(tsidx)/tphase_set(tsidx));
                     tr = tr(tr>=0);
-                    if plot_intensity==0
-                        tr = tr>0;
-                    end
-                    if plot_intensity==2
-                        tr(tr==0) = nan;
-                    end
+                    
                     % Record first spot appearance - error in time alignment
                     tfirst = find(tr>0,1,'first')*dt;
                     if numel(tfirst)&(tfirst<500)&(tfirst>150)
@@ -136,9 +139,25 @@ for i = 1:numel(compare_list)
                         end
                     end
                     
-                    trace_all{total}=tr;
+                    % Extract feature: pspot, loci or spot intensty
+                    if plot_intensity==0
+                        tr = tr>0;
+                    end
+                    if plot_intensity==2
+                        tr(tr==0) = -1;
+                    end
+                    % select only ON nuclei?
+                    if only_ON
+                        if ~any(tr>0)
+                            tr(~isnan(tr)) = -1;
+                        end
+                    end
+                    % Record time and trace
                     time_all{total}=sum(~isnan(tr));
                     tmax=max(time_all{total},tmax);
+                    trace_all{total}=tr;
+                    
+                    
                     
                     if sum(tr>0)==0
                         cntempty=cntempty+1;
@@ -161,15 +180,18 @@ for i = 1:numel(compare_list)
             mIrec=[];
             sIrec=[];
             nIrec=[];
+            nIrec_real=[];
             for j=1:numel(Irec)
                 if numel(Irec{j})>3
-                    mIrec(j)=nanmean(Irec{j});
-                    sIrec(j)=sqrt(nanvar(Irec{j}));
-                    nIrec(j)=sum(~isnan(Irec{j}));
+                    mIrec(j)=nanmean(Irec{j}(Irec{j}>=0));
+                    sIrec(j)=sqrt(nanvar(Irec{j}(Irec{j}>=0)));
+                    nIrec(j)=sum(~isnan(Irec{j}(Irec{j}>=0)));
+                    nIrec_real(j)=sum(~isnan(Irec{j}));
                 else
                     mIrec(j)=0;
                     sIrec(j)=0;
                     nIrec(j)=0;
+                    nIrec_real(j)=0;
                 end
             end
         end
@@ -179,7 +201,7 @@ for i = 1:numel(compare_list)
         nIax{cycleno-8}=nIrec;
         nI(cycleno-8)=total;
         % Trim traces till mitosis
-        last_time = find(nIrec<=max(nIrec)/3,1,'first');
+        last_time = find(nIrec_real<=max(nIrec_real)/3,1,'first');
         if last_time
             trace_length(cycleno-8) = last_time;
             tax{cycleno-8}=tax{cycleno-8}(1:trace_length(cycleno-8));
@@ -241,7 +263,7 @@ for i = 1:numel(compare_list)
     
     h19{i}=shadedErrorBar(tnormalized,cell2mat(mIax),cell2mat(sIax)./sqrt(nI(cycleno-8)),{'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2},0.5);hold on;
     xlabel('Time (s)');
-    ylabel(ylb);
+    ylabel([ylb on_label]);
     % Record for comparison:
     mI_rec_tmp{i}=cell2mat(mIax);
     tI_rec_tmp{i}=tnormalized;
@@ -263,7 +285,7 @@ for i = 1:numel(compare_list)
         h30i{cycleno}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',['nc' num2str(cycleno)],'color',corder(cycleno)},0.5);hold on;
     end
     xlabel('normalized time');
-    ylabel(['Normalized ' ylb]);
+    ylabel(['Normalized ' ylb on_label]);
     title(DatasetLabel{i});
     legend boxoff
     figure(21);

@@ -5,19 +5,25 @@ warning off;
 fld='../../Data analysis/';
 load([fld 'feature_label.mat']);
 
-Nsample=1;      % Minimum total nuclei per position
-Nsample_indi=1; % Minimum nuclei per embryo per position
+Nsample=5;      % Minimum total nuclei per position
+Nsample_indi=5; % Minimum nuclei per embryo per position
 
 plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
 trimmed_trace = 1;      % trimmed trace (1) or not (0)
 smooth_curve = 1;
+kymo_intensity = 1;     % Plot kymograph of loci intensity of Pspot
 compare_1x2x = false;
+
+%% Feature to plot, plot settings
+fea_range=[22];
+nc_range=[13];
+
 %% Set up data list
 
 dtset = struct('filename','','label','');
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2';
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'vk33';
 
 dtset(2).filename = 'B6-near';  dtset(2).label = 'B6';
 dtset(3).filename = 'B9-near';  dtset(3).label = 'B9';
@@ -26,8 +32,8 @@ dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far';
 dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far';
 dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far';
 
-dtset(8).filename = 'hb-II';  dtset(8).label = 'hb-P2 ii';
-dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'hb-P2 iii';
+dtset(8).filename = 'hb-II';  dtset(8).label = 'rand. II';
+dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'rand. III';
 
 dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';
 
@@ -36,17 +42,15 @@ dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-%compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [1 2 3 4]; isBcd1X = [0 0 0 0]; % For hb-B6-H6B6 comparison
+%compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
-compare_list = [1 2 3 4];isBcd1X=[0 0 0 0];
+%compare_list = [1 2 3 4];isBcd1X=[0 0 0 0];
 %compare_list = [2 4 10 12]; isBcd1X = compare_list*0;
 
 
 avr = [600 750 1100];                % Mean nc13 duration
-%% Feature to plot, plot settings
-fea_range=[16];
-nc_range=[13];
+
 
 %AP_limit = [-35 20]; % for B6-B9-B12
 AP_limit = [-30 20]; % for zld
@@ -65,8 +69,8 @@ for i=1:numel(compare_list)
     end
 end
 %% Plot stuffs
-ymax=zeros(1,17);
-ymin=zeros(1,17)+1e5;
+ymax=zeros(1,Nfea);
+ymin=zeros(1,Nfea)+1e5;
 rec_fea=[];
 
 h=[];
@@ -350,11 +354,15 @@ for i=1:numel(compare_list)
     for nc=nc_range
         
         tphase_all{nc} = [tphase_all{nc} heatmapI(nc-8).tphase];
-        hall{i} = [hall{i};heatmapI(nc-8).Rel_map{1,2}];
+        hall{i} = [hall{i};heatmapI(nc-8).Rel_map{1,1+kymo_intensity}];
         tall{i} = [tall{i} avr_step(nc - nc_range(1) + 1)+heatmapI(nc-8).Rel_time/heatmapI(nc-8).Rel_time(end)*avr(nc-10)];
-        
-        ymax_(compare_list(i)) = max(ymax_(i),max(heatmapI(nc-8).Rel_map{1,2}(:)));
-        ymax__(nc) = max(ymax__(nc),max(heatmapI(nc-8).Rel_map{1,2}(:)));
+        if kymo_intensity
+            ymax_(compare_list(i)) = max(ymax_(i),max(heatmapI(nc-8).Rel_map{1,1+kymo_intensity}(:)));
+            ymax__(nc) = max(ymax__(nc),max(heatmapI(nc-8).Rel_map{1,2}(:)));
+        else
+            ymax_(compare_list(i)) = 1;
+            ymax__(nc) = 1;
+        end
     end
 end
 
@@ -381,7 +389,11 @@ for i=1:numel(compare_list)
         HeatMap_(hall{i}*0,pos_range,tall{i}*1.5,[0 max(ymax__(:))]);
         hold on;
         HeatMap_(hall{i},pos_range,tall{i},[0 max(ymax__(:))]);
-        caxis([0 15])
+        if kymo_intensity
+            caxis([0 15])
+        else
+            caxis([0 1]);
+        end
         if i~=numel(compare_list)
             colorbar off
         end

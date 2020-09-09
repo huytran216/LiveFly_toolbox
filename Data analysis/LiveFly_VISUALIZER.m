@@ -12,13 +12,13 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};feature_unit={};
-Nfea=17;
+Nfea=22;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
     AP=[-20 20];
     DatasetName = '';       % Dataset name
-    DatasetPath = 'data';       % Dataset save path
+    DatasetPath = 'final_ddataset';       % Dataset save path
     Nmov=0;                 % Number of movie
 % Storage movie list
     emptystruct=orderfields(struct('tscnt',[],'Path','','Name','','correction',false, ...
@@ -407,6 +407,7 @@ set(segfigure,'Visible','on');
         end
         % QUICK PROCESSING
             % Analyze untrimmed trace
+                hloadmovie_Callback();
             trimmed=false;
                 hextractfeature_Callback();
                 hall_kymo_Callback();
@@ -926,7 +927,7 @@ set(segfigure,'Visible','on');
                     figure('Name',['Dataset: ' DatasetName '. nc' num2str(cycleno)]);
                     cnt=0;
                     yrange={};
-                    ymin=zeros(1,17);ymax=zeros(1,17);
+                    ymin=zeros(1,Nfea);ymax=zeros(1,Nfea);
                     for tsidx=ts_spec
                         for feaidx=fea_plot(:)'
                             if numel(DatasetFeature(cnt0).fearec_all{feaidx,tsidx})

@@ -1,5 +1,5 @@
 cnt=0;
-cycleno=13;
+cycleno=11;
 figure;
 isIntensity = 1;
 for i=1:size(heatmapI(5).Rel_map_indi,1)

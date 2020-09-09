@@ -1,4 +1,4 @@
-function [pos_prediction_map,ax,ay,pos_prediction_map_] = shift_prediction_map(pos_range1,mIin1, sIin1,pos_range2,mIin2, sIin2)
+function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = shift_prediction_map(pos_range1,mIin1, sIin1,pos_range2,mIin2, sIin2)
     % Expand pos_range by patching data with maximum and mininum:
     pos_range1_ = [pos_range1-numel(pos_range1) pos_range1() pos_range1+numel(pos_range1)];
     pos_range2_ = [pos_range2-numel(pos_range2) pos_range2() pos_range2+numel(pos_range2)];
