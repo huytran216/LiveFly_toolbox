@@ -39,7 +39,8 @@ dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
 %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [2 3 4 10 12 2 3 4 10 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+compare_list = [2 3 4 12 2 3 4 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+%compare_list = [12 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [7 7];isBcd1X=[0 1];
 %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
@@ -62,7 +63,7 @@ for i=1:numel(compare_list)
     end
 end
 %% Feature to plot, plot settings
-fea_range=[1];
+fea_range=[16];
 nc_range=[13];
 
 AP_limit = [-32 20]; % for B6-B9-B12
@@ -163,7 +164,13 @@ for nc=nc_range
                 figure(20+original_i);
                 set(gcf,'Position',[680   738   284   240]);
                 title(DatasetLabel{original_i});
-                subplot(numel(nc_range),numel(fea_range),cnt);
+                if (numel(nc_range)==1)&&(numel(fea_range)==1)
+                    % Calculating boundary shift
+                    subplot(1,2,1);
+                else
+                    % Plot only
+                    subplot(numel(nc_range),numel(fea_range),cnt);
+                end
                 if shaded_error_bar                    
                     h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i}},0.8,1);
                 else
@@ -193,7 +200,6 @@ for nc=nc_range
                 mI_rec{original_i,1+isBcd1X(i)}=mIall;
                 sI_rec{original_i,1+isBcd1X(i)}=sIall;
                 pos_rec{original_i,1+isBcd1X(i)}=pos_range;
-                
         end
         % Make a table out of it: constructs are put vertically
             header={};
@@ -239,8 +245,22 @@ for nc=nc_range
             htmp=figure(80);set(htmp,'Name',['nc ' num2str(nc),', Feature: ' feature_label{fea}],'Position',[100 100 800 500]);
             htmptable =   uitable('Parent',htmp,'Position',[0 0 800 500]);
             htmptable.Data = header;
-            set(htmptable,'ColumnEditable',true(1,10))
+            set(htmptable,'ColumnEditable',true(1,10))            
     end
+end
+%% Plot border shift vs position
+fea = fea_range(1);
+for nc=nc_range
+    for i=1:numel(compare_list)/2
+        xtmp(i,nc) = xborder(i,fea,nc,1);
+        sxtmp(i,nc) = (xborder(i,fea,nc,3) - xborder(i,fea,nc,2))/2;
+        dxtmp(i,nc) = xborder(i+numel(compare_list)/2,fea,nc,1) - xborder(i,fea,nc,1);
+        sdxtmp(i,nc) = (xborder(i+numel(compare_list)/2,fea,nc,3) - xborder(i+numel(compare_list)/2,fea,nc,2))/2 + (xborder(i,fea,nc,3) - xborder(i,fea,nc,2))/2;
+    end
+    figure;
+    errorbar(xtmp(:,nc),dxtmp(:,nc),sdxtmp(:,nc),sdxtmp(:,nc),sxtmp(:,nc),sxtmp(:,nc),'.');
+    xlabel('Original position  (%EL)');
+    ylabel('Mean boundary shift (%EL)');
 end
 %% Estimation of displace:
 % Predict new position:
@@ -254,6 +274,8 @@ for i=1:numel(compare_list)/2
 %     mI_rec{i,2}(mI_rec{i,2}<max(mI_rec{i,2})/20)=0;
     pos_range1 = pos_rec{i,1}>=-30;
     pos_range2 = pos_rec{i,2}>=-30;
+    figure(20+i);
+    subplot(1,2,2);
     [diff_plot{i},ax,ay,diff_grid{i},prange1,prange2]=shift_prediction_map(pos_rec{i,1}(pos_range1),mI_rec{i,1}(pos_range1),sI_rec{i,1}(pos_range1),...
         pos_rec{i,2}(pos_range2),mI_rec{i,2}(pos_range2),sI_rec{i,2}(pos_range2));
     
@@ -266,7 +288,8 @@ for i=1:numel(compare_list)/2
     set(gcf,'Position',[680   738   284   240]);
     xlim([-30 20]);
     ylim([-30 20]);
-    caxis([0 0.5]);
+    caxis([0 0.5]);    
+    title(DatasetLabel{i});
     colormap(flipud(gray));
     if i==1
         diff_all = diff_plot{1};
@@ -275,32 +298,35 @@ for i=1:numel(compare_list)/2
         diff_all = diff_all*diff_plot{i};
         diff_grid_all = diff_grid_all.*diff_grid{i};
     end
-    figure(6);
-    subplot(1,numel(compare_list)/2,i);
-    mDX = [];
-    sDX = [];
-    for j=1:sum(pos_range1)
-        %mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
-        %sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
-        mDX(j) = sum(diff_grid{i}(j,:).*pos_range(pos_range1));
-        sDX(j) = sqrt(sum(diff_grid{i}(j,:).*pos_range(pos_range1).^2) - mDX(j).^2);
-    end
-    errorbar(pos_range(pos_range1),mDX,sDX);
-    xlim([-30 20]);
-    title(DatasetLabel{i});
-    % Plot combined probability map
+%     figure(6);
+%     subplot(1,numel(compare_list)/2,i);
+%     mDX = [];
+%     sDX = [];
+%     for j=1:sum(pos_range1)
+%         %mDX(j) = sum(diff_plot{i}(j,:)'.*(ay(:,j)-ax(:,j)));
+%         %sDX(j) = sqrt(sum(diff_plot{i}(j,:)'.*((ay(:,j)-ax(:,j)).^2)) - mDX(j).^2);
+%         mDX(j) = sum(diff_grid{i}(j,:).*pos_range(pos_range1));
+%         sDX(j) = sqrt(sum(diff_grid{i}(j,:).*pos_range(pos_range1).^2) - mDX(j).^2);
+%     end
+%     errorbar(pos_range(pos_range1),mDX,sDX);
+%     xlim([-30 20]);
+%     title(DatasetLabel{i});
 end
+
+    % Plot combined probability map
         figure(7);
         HeatMap_(log(diff_grid_all'+1e-10),prange1,prange2,[log(1e-10) log(max(diff_grid_all(:)))]);
         hold on;
-        plot3(prange1(:),prange1(:)*0,prange1(:)*0+max(diff_grid_all(:)),'LineStyle','--','color','k','LineWidth',1);
+        h = plot3(prange1(:),prange1(:)*0 - 14,prange1(:)*0+log(max(diff_grid_all(:))),'LineStyle','--','color','r','LineWidth',1,'Display','Theory');
+        legend(h,'Theory');
+        
         set(gca,'Ydir','normal');
         colormap(flipud(gray));
         xlabel('Original nuclei position (%EL)');
         ylabel('Predicted shift (%EL)');
         xlim([-30 20]);
         ylim([-30 20]);
-        zlim([log(1e-10) log(max(diff_grid_all(:)))])
+        zlim([log(1e-10) -1])
 %% Summary
 % figure(107);
 % subplot(121);
@@ -340,7 +366,7 @@ end
     %set(gcf,'Position',tmpfig);
 %% Fit displacement with a curve:
     syms x;
-    model_range = {'exp'};
+    model_range = {'exp','hybrid'};
     dat = struct;
     for modelidx = 1:numel(model_range)
         model = model_range{modelidx};
@@ -356,25 +382,36 @@ end
         dat(modelidx).y = y;
         dat(modelidx).fun = fun;
 
-        ax_ = ax(1,:);
-        ax_fit = [-20:0]; % Range of scan for shift in 2X, that is used in fitting:
+        ax_ = prange1(1,:);
+        ax_fit = [-20:10]; % Range of scan for shift in 2X, that is used in fitting:
         ratio = 0.5;      % change in Bcd level
 
-        newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
-            -ax_(1)+1+ax_fit,...
-            max([ones(1,numel(ax_fit)); ...
-            min([numel(ax_)*ones(1,numel(ax_fit)); ...
-            (-ax_(1)+1+ax_fit+round(find_displacement(y0,fun,y,x,ax_fit,ratio)))
-            ])...
-            ])...
+        infsmall = 1e-10;
+%         newfun = @(y0) -sum(log(infsmall+diff_all(sub2ind(size(diff_all),...
+%             -ax_(1)+1+ax_fit,...
+%             max([ones(1,numel(ax_fit)); ...
+%             min([numel(ax_)*ones(1,numel(ax_fit)); ...
+%             (-ax_(1)+1+ax_fit+round(find_displacement(y0,fun,y,x,ax_fit,ratio)))
+%             ])...
+%             ])...
+%             ))));
+%          dat(modelidx).newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
+%             -ax_(1)+1+ax_fit,...
+%             max([ones(1,numel(ax_fit)); ...
+%             min([numel(ax_)*ones(1,numel(ax_fit)); ...
+%             (-ax_(1)+1+ax_fit+round(find_displacement(y0,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,ax_fit,ratio)))
+%             ])...
+%             ])...
+%             ))));
+        
+        newfun = @(y0) -sum(log(infsmall+diff_grid_all(sub2ind(size(diff_grid_all),...
+            -ax_(1)+1+ax_fit,...    % Original position
+            -ax_(1)+1+round(find_displacement(y0,fun,y,x,ax_fit,ratio))... % Shift position
             ))));
+        
         dat(modelidx).newfun = @(y0) -sum(log(1e-10+diff_all(sub2ind(size(diff_all),...
-            -ax_(1)+1+ax_fit,...
-            max([ones(1,numel(ax_fit)); ...
-            min([numel(ax_)*ones(1,numel(ax_fit)); ...
-            (-ax_(1)+1+ax_fit+round(find_displacement(y0,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,ax_fit,ratio)))
-            ])...
-            ])...
+            -ax_(1)+1+ax_fit,...            
+            (-ax_(1)+1+round(find_displacement(y0,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,ax_fit,ratio)))...
             ))));
 
         switch model 
@@ -415,7 +452,8 @@ for i=1:numel(compare_list)/2
     figure(120+i);
     plot(pos_rec{i,1},mI_rec{i,1},'-b','Display','2X');hold on;
     plot(pos_rec{i,2},mI_rec{i,2},'-r','Display','1X');
-    xlim([AP_limit])
+    title(DatasetLabel{i});
+    xlim([AP_limit]);
 end
 
 for modelidx = 1:numel(model_range)
@@ -443,6 +481,9 @@ for modelidx = 1:numel(model_range)
         postmp = pos_rec{i,1}+fun_dx;
         plot(postmp,mItmp,'LineStyle','--','Display',model);
     end
+    figure(7);
+    hold on;
+    plot3(pos_range,fun_dx,pos_range*0-1,'LineStyle','--','LineWidth',2,'Display',model);
 end
 figure(108);
 subplot(1,3,1);legend show;
@@ -452,6 +493,5 @@ for i=1:numel(compare_list)/2
    figure(120+i);
    legend show;
 end
-%% Transform the axes:
 
 

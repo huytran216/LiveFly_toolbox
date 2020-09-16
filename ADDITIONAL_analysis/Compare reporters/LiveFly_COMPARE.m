@@ -12,18 +12,18 @@ plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei err
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
 trimmed_trace = 1;      % trimmed trace (1) or not (0)
-smooth_curve = 1;
-kymo_intensity = 1;     % Plot kymograph of loci intensity of Pspot
+kymo_intensity = 0;     % Plot kymograph of loci intensity (1) or Pspot (0)
 compare_1x2x = false;
 
+smooth_curve = 1;
 %% Feature to plot, plot settings
-fea_range=[22];
+fea_range=[21 23 24];
 nc_range=[13];
-
+close all;
 %% Set up data list
 
 dtset = struct('filename','','label','');
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'vk33';
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2';
 
 dtset(2).filename = 'B6-near';  dtset(2).label = 'B6';
 dtset(3).filename = 'B9-near';  dtset(3).label = 'B9';

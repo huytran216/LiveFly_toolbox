@@ -12,7 +12,7 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};feature_unit={};
-Nfea=22;
+Nfea=24;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -380,8 +380,8 @@ set(segfigure,'Visible','on');
     % Load/Save dataset
     function hquickprocess_Callback(~,~)
         % Imput for bulk process
-        Outtext=cell(1,numel(nc_range));
-        Deftext=cell(1,numel(nc_range));
+        Outtext=cell(1,numel(nc_range)+2);
+        Deftext=cell(1,numel(nc_range)+2);
         if numel(datamat)
             for i=1:numel(nc_range)
                 Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
@@ -391,6 +391,10 @@ set(segfigure,'Visible','on');
                     Deftext{i}=['0 10000'];
                 end
             end
+            Outtext{end-1}='Maximum burst duration to analyze (in second)?';
+            Deftext{end-1}='300';
+            Outtext{end}='Reload data files?';
+            Deftext{end}='0';
             dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
             for i=1:numel(nc_range)
                 tmp=str2num(dlg{i});
@@ -401,13 +405,16 @@ set(segfigure,'Visible','on');
                     return;
                 end
             end
+            tburst = str2double(dlg{end-1});
         else
             msgbox('Load movie first');
             return;
         end
         % QUICK PROCESSING
             % Analyze untrimmed trace
+            if str2double(dlg{end})
                 hloadmovie_Callback();
+            end
             trimmed=false;
                 hextractfeature_Callback();
                 hall_kymo_Callback();
@@ -418,7 +425,7 @@ set(segfigure,'Visible','on');
                     for i=1:numel(cycle_range)
                         heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
                     end
-                    Re_Extract_feature(cycle_range,tlower,tupper);
+                    Re_Extract_feature(cycle_range,tlower,tupper,tburst);
                     trimmed=true;
                 %catch
                 %end
@@ -1279,13 +1286,16 @@ set(segfigure,'Visible','on');
         end
     end
 %% Auxiliary function
-    function Re_Extract_feature(cycle_range,tlower,tupper)
+    function Re_Extract_feature(cycle_range,tlower,tupper,tburst)
         if nargin==0
             % Simple refresh
             cycle_range = nc_range;
             tlower = zeros(Nmov,numel(nc_range));
             tupper = zeros(Nmov,numel(nc_range))+10000;
         end
+        if nargin<4
+            tburst = 300;
+        end        
         cycle_range_=zeros(1,14);
         cycle_range_(cycle_range)=1;
         tlower_ = zeros(Nmov,14);tlower_(1:size(tlower,1),cycle_range)=tlower;
@@ -1296,7 +1306,7 @@ set(segfigure,'Visible','on');
             if cycle_range_(datamat(i).cycle)
                 if (datamat(i).Feature(1)>=0)&&(tupper_(datamat(i).tscnt,datamat(i).cycle))
                     datamat(i).Feature=extract_feature(datamat(i).Intensity,datamat(i).time,...
-                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec);
+                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec,tburst);
                 end
             end
         end

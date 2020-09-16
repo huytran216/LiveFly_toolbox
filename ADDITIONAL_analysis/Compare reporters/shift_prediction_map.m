@@ -5,15 +5,15 @@ function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = 
     [~,maxpt1] = max(mIin1); 
     mIin1(1:find(~isnan(mIin1),1,'first')-1)=mIin1(maxpt1);
     sIin1(1:find(~isnan(mIin1),1,'first')-1)=sIin1(maxpt1);
-    mIin1(1:find(~isnan(mIin1),1,'last')+1:end)=0;
-    sIin1(1:find(~isnan(mIin1),1,'last')+1:end)=0;
+    mIin1(find(~isnan(mIin1),1,'last')+1:end)=0;
+    sIin1(find(~isnan(mIin1),1,'last')+1:end)=0;
     mIin1 = [mIin1(maxpt1)*ones(1,numel(pos_range1)) mIin1 0*ones(1,numel(pos_range1))];
     sIin1 = [sIin1(maxpt1)*ones(1,numel(pos_range1)) sIin1 0*ones(1,numel(pos_range1))];
     [~,maxpt2] = max(mIin2);
     mIin2(1:find(~isnan(mIin2),1,'first')-1)=mIin2(maxpt2);
     sIin2(1:find(~isnan(mIin2),1,'first')-1)=sIin2(maxpt2);
-    mIin2(1:find(~isnan(mIin2),1,'last')+1:end)=0;
-    sIin2(1:find(~isnan(mIin2),1,'last')+1:end)=0;
+    mIin2(find(~isnan(mIin2),1,'last')+1:end)=0;
+    sIin2(find(~isnan(mIin2),1,'last')+1:end)=0;
     mIin2 = [mIin2(maxpt1)*ones(1,numel(pos_range2)) mIin2 0*ones(1,numel(pos_range2))];
     sIin2 = [sIin2(maxpt1)*ones(1,numel(pos_range2)) sIin2 0*ones(1,numel(pos_range2))];
     
@@ -44,7 +44,6 @@ function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = 
         pos_prediction_map(i,:)=pos_prediction_map(i,:)/sum(pos_prediction_map(i,:));
     end
     [ax,ay] = meshgrid(pos_range1_,pos_range2_);
-    figure;
     %subplot(121);
     %HeatMap_(pos_prediction_map',ax,ay,[0 max(pos_prediction_map(:))]);
     %hold on;
