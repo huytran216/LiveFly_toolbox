@@ -5,10 +5,10 @@ warning off;
 fld='../../Data analysis/';
 load([fld 'feature_label.mat']);
 
-Nsample=5;      % Minimum total nuclei per position
+Nsample=3;      % Minimum total nuclei per position
 Nsample_indi=5; % Minimum nuclei per embryo per position
 
-plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
+plot_embryo_error=0;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
 trimmed_trace = 1;      % trimmed trace (1) or not (0)
@@ -17,8 +17,10 @@ compare_1x2x = false;
 
 smooth_curve = 1;
 %% Feature to plot, plot settings
-fea_range=[21 23 24];
+fea_range=[24];
 nc_range=[13];
+
+AP_limit = [-20 10];
 close all;
 %% Set up data list
 
@@ -52,8 +54,7 @@ compare_list = [1 2 3 4]; isBcd1X = [0 0 0 0]; % For hb-B6-H6B6 comparison
 avr = [600 750 1100];                % Mean nc13 duration
 
 
-%AP_limit = [-35 20]; % for B6-B9-B12
-AP_limit = [-30 20]; % for zld
+
 %% Set folder containing mean data (contain dash)
 folder={};
 folder{1}='tmp/';
@@ -81,9 +82,12 @@ cnt2=0;
 for nc=nc_range
     for fea=fea_range
         cnt=cnt+1;
+        RHO = [];
+        PVAL = [];
+        NSAMPLE = [];
         for i=1:numel(compare_list)
             cnt2=cnt2+1;
-            load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'pos_range','mf_rec','nf_rec','nf_indi','mf_indi','sf_indi','FitRes');
+            load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'pos_range','mf_rec','nf_rec','sf_rec','nf_indi','mf_indi','sf_indi','FitRes','samplef_rec','samplex_rec');
             % Get confidence interval of inferreable params
                 tsfirst = find(FitRes(nc-8).xborder_rec(fea,:),1,'first');
                 noembryo(i,nc) = sum(FitRes(nc-8).vborder_rec(fea,:)~=0);
@@ -178,6 +182,18 @@ for nc=nc_range
                 set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
                 plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2);
                 hold on;
+            % Calculate Spearman testz
+                sample_f = samplef_rec{nc-8,fea};
+                sample_x = samplex_rec{nc-8,fea};
+                idselect = (sample_x>=AP_limit(1))&(sample_x<=AP_limit(2));
+                if numel(idselect)>10
+                    [RHO(i),PVAL(i)] = corr(sample_f(idselect)',sample_x(idselect)','Type','Spearman');
+                    NSAMPLE(i) = numel(idselect);
+                else
+                    RHO(i)=0;
+                    PVAL(i) = 1;
+                    NSAMPLE(i) = 0;
+                end
         end
         % Get legends and correct axis
             figure(40);
@@ -275,6 +291,9 @@ for nc=nc_range
             header{2,4}='Hill';
             header{2,5}='Width';
             header{2,6}='HalfMax';
+            header{2,7}='Rho';
+            header{2,8}='p-val';
+            header{2,9}='Nsample';
             cnti=2; % Line number
             for i=1:numel(compare_list)
                 cnti=cnti+1;
@@ -299,8 +318,11 @@ for nc=nc_range
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                     case 1
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.2f') ' ' char(177) ' ' ...
-                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];    
+                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                 end
+                header{cnti,7}= RHO(i);
+                header{cnti,8}= PVAL(i);
+                header{cnti,9}= NSAMPLE(i);
             end
             % Make the table:
             htmp=figure(30);set(htmp,'Name',['nc ' num2str(nc),', Feature: ' feature_label{fea}],'Position',[100 100 800 500]);

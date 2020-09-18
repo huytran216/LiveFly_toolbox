@@ -1,4 +1,4 @@
-function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z,tburst)
+function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z,twindow)
     % Feature extraction
     % Input:
     %   x: spot intensity over time during phase S.
@@ -39,7 +39,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     % Output:
         % res: array of features to be extracted
     %% Set initial parameters if missing
-    NFeature = 24;
+    NFeature = 26;
     res=-ones(1,NFeature);
     if nargin==0
         res=-ones(1,NFeature);
@@ -57,8 +57,8 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     if ~exist('censored','var')
         censored=0;
     end
-    if ~exist('tburst','var')
-        tburst = 300;
+    if ~exist('twindow','var')
+        twindow = 300;
     end
     % Fit invalid cell then don't do anything
     if (censored<0)
@@ -67,10 +67,12 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     end
     % Remove too dim spots
     x(x<threshold)=0;
-    % Remove single-frame spots
-        xtmp=[0 x>0 0];
-        for i=1:numel(x)
-            if norm(xtmp([i i+1 i+2]) - [0 1 0])==0
+    % Remove single-frame off time and single-frame spots:
+        for i=2:numel(x)-1
+            if (x(i)==0)&&(x(i-1)>0)&&(x(i+1)>0)
+                x(i)=mean([x(i-1),x(i+1)]);
+            end
+            if (x(i)>0)&&(x(i-1)==0)&&(x(i+1)==0)
                 x(i)=0;
             end
         end
@@ -176,14 +178,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 end
         % Mean Spot Intensity (only expressing nuclei (full trace)and non-expressing frames)
                 if on_ori>0
-                    t0 = find(x_ori>0,1,'first');
-                    tend = min(round(trange(2)/dt),numel(x_ori));
-                    [~,ia] = intersect(time,time_ori(t0:tend));
-                    if res(4)>0
-                        res(17)=mean(x(ia));
-                    else
-                        res(17)=0;
-                    end
+                    res(17)=mean(x);
                 else
                     res(17)=NaN;
                 end
@@ -207,14 +202,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 end
         % Mean PSpot (only expressing nuclei (full trace)and non-expressing frames)
                 if on_ori>0
-                    t0 = find(x_ori>0,1,'first');
-                    tend = min(round(trange(2)/dt),numel(x_ori));
-                    [~,ia] = intersect(time,time_ori(t0:tend));
-                    if res(4)>0
-                        res(21)=mean(x(ia)>0);
-                    else
-                        res(21)=0;
-                    end
+                    res(21)=mean(x>0);
                 else
                     res(21)=NaN;
                 end
@@ -230,24 +218,31 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                     % Extract first spot appearance
                     t0 = find(x_ori>0,1,'first');
                     tend = min(round(trange(2)/dt),numel(x_ori));
-                    if (tend-t0)>=tburst/dt
-                        % Last spot appearance
+                    if (tend-t0)>=twindow/dt
+                        % Last spot appearance - need to be off for more at least 2 frames
                         toff = find(x_ori(t0:tend)==0,1,'first')-1;
-                        if toff*dt<tburst
-                            x_trim = x_ori(t0:t0+toff-1);
-                            res(24) = toff/round(tburst/dt);
+                        x_trim = x_ori(t0:t0+round(twindow/dt));
+                        x_burst = x_ori(t0:t0+toff-1);
+                        if toff*dt<twindow
+                            res(23) = mean(x_burst);
+                            res(24) = toff/round(twindow/dt);
                         else
-                            x_trim = x_ori(t0:t0+round(tburst/dt));
+                            res(23) = mean(x_trim);
                             res(24) = 1;
                         end
-                        res(23) = mean(x_trim);
+                        res(25) = mean(x_trim);
+                        res(26) = mean(x_trim>0);
                     else
                         % Not enough remaining time to analyze
                         res(23)=NaN;
                         res(24)=NaN;
+                        res(25)=NaN;
+                        res(26)=NaN;
                     end
                 else
                     res(23)=NaN;
                     res(24)=NaN;
+                    res(25)=NaN;
+                    res(26)=NaN;
                 end   
     end

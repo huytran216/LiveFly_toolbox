@@ -12,7 +12,7 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};feature_unit={};
-Nfea=24;
+Nfea=26;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -385,14 +385,17 @@ set(segfigure,'Visible','on');
         if numel(datamat)
             for i=1:numel(nc_range)
                 Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
-                if nc_range(i)==13
-                    Deftext{i}=['600 750'];
-                else
-                    Deftext{i}=['0 10000'];
+                switch nc_range(i)
+                    case 12
+                        Deftext{i}=['0 550'];
+                    case 13
+                        Deftext{i}=['600 800'];
+                    otherwise
+                        Deftext{i}=['0 10000'];    
                 end
             end
             Outtext{end-1}='Maximum burst duration to analyze (in second)?';
-            Deftext{end-1}='300';
+            Deftext{end-1}='400';
             Outtext{end}='Reload data files?';
             Deftext{end}='0';
             dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
@@ -405,7 +408,7 @@ set(segfigure,'Visible','on');
                     return;
                 end
             end
-            tburst = str2double(dlg{end-1});
+            twindow = str2double(dlg{end-1});
         else
             msgbox('Load movie first');
             return;
@@ -425,7 +428,7 @@ set(segfigure,'Visible','on');
                     for i=1:numel(cycle_range)
                         heatmapI(cycle_range(i)-8).posborder=posborder(1,i);
                     end
-                    Re_Extract_feature(cycle_range,tlower,tupper,tburst);
+                    Re_Extract_feature(cycle_range,tlower,tupper,twindow);
                     trimmed=true;
                 %catch
                 %end
@@ -1286,7 +1289,7 @@ set(segfigure,'Visible','on');
         end
     end
 %% Auxiliary function
-    function Re_Extract_feature(cycle_range,tlower,tupper,tburst)
+    function Re_Extract_feature(cycle_range,tlower,tupper,twindow)
         if nargin==0
             % Simple refresh
             cycle_range = nc_range;
@@ -1294,7 +1297,7 @@ set(segfigure,'Visible','on');
             tupper = zeros(Nmov,numel(nc_range))+10000;
         end
         if nargin<4
-            tburst = 300;
+            twindow = 300;
         end        
         cycle_range_=zeros(1,14);
         cycle_range_(cycle_range)=1;
@@ -1306,7 +1309,7 @@ set(segfigure,'Visible','on');
             if cycle_range_(datamat(i).cycle)
                 if (datamat(i).Feature(1)>=0)&&(tupper_(datamat(i).tscnt,datamat(i).cycle))
                     datamat(i).Feature=extract_feature(datamat(i).Intensity,datamat(i).time,...
-                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec,tburst);
+                        0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec,twindow);
                 end
             end
         end
@@ -1323,11 +1326,16 @@ set(segfigure,'Visible','on');
             sf_rec={};  % Standard deviation
             nf_rec={};  % Number of nuclei
             ef_rec={};  % Number of embryo
-
+            
+            samplef_rec = {};    % Sample record, function of (nuclear cycle,feature)
+            samplex_rec = {};    % Position record, function of (nuclear cycle,feature)
+            
             % Record the mean curves for individual embryos {feature x cycle x embryo} x [position]
             mf_indi={};  % Mean curve
             sf_indi={};  % Standard deviation
             nf_indi={};  % Number of nuclei
+            sample_indi = {};    % Sample record, function of (nuclear cycle,feature)x(embryo)
+            samplex_indi = {};   % Position record, function of (nuclear cycle,feature)x(embryo)
             cnt=0;
             for cycleno=nc_range
                 cnt=cnt+1;
@@ -1348,6 +1356,10 @@ set(segfigure,'Visible','on');
                             allf=[allf DatasetFeature(cnt).fearec_all{fea,tsidx}];
                             allf_{cnt2}=DatasetFeature(cnt).fearec_all{fea,tsidx};
                         end
+                        samplef_rec{cnt,cnt1} = allf;
+                        samplex_rec{cnt,cnt1} = allx;
+                        samplef_indi{cnt,cnt1} = allf_;
+                        samplex_indi{cnt,cnt1} = allx_;
                         % Calculate merged mean curve:
                             cnt3=0;
                             mf=[];  % mean
@@ -1404,11 +1416,15 @@ set(segfigure,'Visible','on');
             if trimmed
                 mkdir('tmp_trimmed');
                 FitRes = FitResult{2};
-                save(['tmp_trimmed/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes');
+                save(['tmp_trimmed/' tmp],...
+                    'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes',...
+                    'samplef_rec','samplex_rec','samplef_indi','samplex_indi');
             else
                 mkdir('tmp');
                 FitRes = FitResult{1};
-                save(['tmp/' tmp],'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes');
+                save(['tmp/' tmp],...
+                    'mf_rec','sf_rec','nf_rec','pos_range','heatmapI','mf_indi','sf_indi','nf_indi','FitRes',...
+                    'samplef_rec','samplex_rec','samplef_indi','samplex_indi');
             end
         end
     end
