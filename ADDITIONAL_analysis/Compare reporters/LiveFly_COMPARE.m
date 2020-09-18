@@ -17,7 +17,7 @@ compare_1x2x = false;
 
 smooth_curve = 1;
 %% Feature to plot, plot settings
-fea_range=[24];
+fea_range=[26];
 nc_range=[13];
 
 AP_limit = [-20 10];
@@ -188,7 +188,7 @@ for nc=nc_range
                 idselect = (sample_x>=AP_limit(1))&(sample_x<=AP_limit(2));
                 if numel(idselect)>10
                     [RHO(i),PVAL(i)] = corr(sample_f(idselect)',sample_x(idselect)','Type','Spearman');
-                    NSAMPLE(i) = numel(idselect);
+                    NSAMPLE(i) = sum(idselect);
                 else
                     RHO(i)=0;
                     PVAL(i) = 1;
