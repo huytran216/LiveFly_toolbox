@@ -12,7 +12,7 @@ figY1 = 0;
 figY2 = 700;
 
 feature_label={};feature_unit={};
-Nfea=26;
+Nfea=50;
 load('feature_label.mat');
 %% sets initial variables
 % Dataset path
@@ -279,16 +279,16 @@ hp = uipanel('Parent',gcf,'Title','Movie list','FontSize',12,...
         'Normalize by intensity',...
         'SError instead of SDev',...
         };
-    showoption_plot={};
+    showoption_plot=cell(1,numel(showoption_list));
     for sthtmp=1:numel(showoption_list)
         showoption_plot{sthtmp}=false;
     end
+    for sthtmp=[5 6 9]
+        showoption_plot{sthtmp}=true;
+    end
     set(hshowoption,'ColumnEditable',logical([0 1]),'ColumnWidth',{150,40});
     hshowoption.Data=[showoption_list(:),showoption_plot(:)];
-    showoption_plot=[];
-    for sthtmp=1:numel(showoption_list)
-        showoption_plot(sthtmp)=false;
-    end
+    showoption_plot = cell2mat(showoption_plot);
 %% Final settings
 % Assign the GUI a name to appear in the window title.
 set(segfigure,'Name','GETDATA (Press F1 for help)') 
@@ -380,8 +380,8 @@ set(segfigure,'Visible','on');
     % Load/Save dataset
     function hquickprocess_Callback(~,~)
         % Imput for bulk process
-        Outtext=cell(1,numel(nc_range)+2);
-        Deftext=cell(1,numel(nc_range)+2);
+        Outtext=cell(1,numel(nc_range)+4);
+        Deftext=cell(1,numel(nc_range)+4);
         if numel(datamat)
             for i=1:numel(nc_range)
                 Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
@@ -389,16 +389,23 @@ set(segfigure,'Visible','on');
                     case 12
                         Deftext{i}=['0 550'];
                     case 13
-                        Deftext{i}=['600 800'];
+                        Deftext{i}=['0 820'];
                     otherwise
                         Deftext{i}=['0 10000'];    
                 end
             end
-            Outtext{end-1}='Maximum burst duration to analyze (in second)?';
-            Deftext{end-1}='400';
-            Outtext{end}='Reload data files?';
-            Deftext{end}='0';
+            Outtext{end-3}='Maximum burst duration to analyze (in second)?';
+            Deftext{end-3}='400';
+            Outtext{end-2}='Reload data files?';
+            Deftext{end-2}='0';
+            Outtext{end-1}='Rermake kymograph?';
+            Deftext{end-1}='0';
+            Outtext{end}='Refit everything?';
+            Deftext{end}='1';
             dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
+            if ~numel(dlg)
+                return;
+            end
             for i=1:numel(nc_range)
                 tmp=str2num(dlg{i});
                 tcut1(i)=tmp(1);
@@ -408,19 +415,28 @@ set(segfigure,'Visible','on');
                     return;
                 end
             end
-            twindow = str2double(dlg{end-1});
+            twindow = str2double(dlg{end-3});
         else
             msgbox('Load movie first');
             return;
         end
         % QUICK PROCESSING
-            % Analyze untrimmed trace
-            if str2double(dlg{end})
+            % Load movies if specified
+            if str2double(dlg{end-2})
                 hloadmovie_Callback();
             end
+            % Analyze untrimmed trace
             trimmed=false;
-                hextractfeature_Callback();
+            % Reextract features:
+            Re_Extract_feature();
+            % Remake kymograph
+            if str2double(dlg{end-1})
                 hall_kymo_Callback();
+            end
+            % Refit the trace if specified
+            if str2double(dlg{end})
+                hextractfeature_Callback();
+            end
             % Open magnifier
                 h=figure;
                 %try
@@ -433,7 +449,9 @@ set(segfigure,'Visible','on');
                 %catch
                 %end
             % Analyze trimmed trace
+            if str2double(dlg{end})
                 hextractfeature_Callback();
+            end
     end
 
     function hsavedataset_Callback(~,~)
@@ -708,7 +726,12 @@ set(segfigure,'Visible','on');
         end
     end
 
-    function hextractfeature_Callback(~,~)
+    function hextractfeature_Callback(varargin)
+        if (nargin ~=1)
+            skipfit = false;
+        else
+            skipfit = varargin{1};
+        end
         f=waitbar(0,'Fitting features');
         normalize_feature=0;
         if numel(datamat)
@@ -719,7 +742,7 @@ set(segfigure,'Visible','on');
                 [DatasetFeature(cnt).idrec,DatasetFeature(cnt).tsrec,DatasetFeature(cnt).xrec,DatasetFeature(cnt).yrec,DatasetFeature(cnt).fearec,...
                     DatasetFeature(cnt).xborder_rec,DatasetFeature(cnt).hborder_rec,DatasetFeature(cnt).wborder_rec,DatasetFeature(cnt).vborder_rec,...
                     DatasetFeature(cnt).xborder_CI,DatasetFeature(cnt).hborder_CI,DatasetFeature(cnt).wborder_CI,DatasetFeature(cnt).vborder_CI,...
-                    DatasetFeature(cnt).xaxis_all,DatasetFeature(cnt).yaxis_all,DatasetFeature(cnt).fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,find(ts_spec),normalize_feature,feature_label,AP,fitoption_Hill);
+                    DatasetFeature(cnt).xaxis_all,DatasetFeature(cnt).yaxis_all,DatasetFeature(cnt).fearec_all]=local_extract_feature(datamat,mf_indi,cycleno,find(ts_spec),normalize_feature,feature_label,AP,fitoption_Hill,skipfit);
             end
         end
         close(f);
@@ -755,8 +778,9 @@ set(segfigure,'Visible','on');
                             colormap(map);
                             set(h,'MarkerEdgeColor','k');
                             set(gca,'YTick',[]);
-                            
-                            ylim([1.1*min(ally(:))-0.1*max(ally(:)),1.1*max(ally(:))-0.1*min(ally(:))]);
+                            if numel(ally)
+                                ylim([1.1*min(ally(:))-0.1*max(ally(:)),1.1*max(ally(:))-0.1*min(ally(:))]);
+                            end
                             ylabel(['nc' num2str(nc_range(new_nc_range(cnt)))]);
                             xlim(AP);
                             if cnt==1
@@ -1306,11 +1330,16 @@ set(segfigure,'Visible','on');
         
         % Begin trimming:
         for i=1:numel(datamat)
+            tmpupdate = true;
             if cycle_range_(datamat(i).cycle)
                 if (datamat(i).Feature(1)>=0)&&(tupper_(datamat(i).tscnt,datamat(i).cycle))
                     datamat(i).Feature=extract_feature(datamat(i).Intensity,datamat(i).time,...
                         0,datamat(i).dt,datamat(i).Imax,0,[tlower_(datamat(i).tscnt,datamat(i).cycle),tupper_(datamat(i).tscnt,datamat(i).cycle)],datamat(i).zrec,twindow);
+                    tmpupdate = false;
                 end
+            end
+            if tmpupdate
+                datamat(i).Feature = -ones(1,Nfea);
             end
         end
     end

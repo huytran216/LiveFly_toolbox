@@ -1,4 +1,8 @@
-function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all_full,yaxis_all_full,fearec_all_full]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption)
+function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vborder_rec,xborder_CI,hborder_CI,wborder_CI,vborder_CI,xaxis_all_full,yaxis_all_full,fearec_all_full]=local_extract_feature(datamat,mf_indi,cycleno,ts_spec,normalize_feature,feature_label,AP,fitoption,skipfit)
+%% Skipfit: skip fitting or not
+    if ~exist('skipfit','var')
+        skipfit = false;
+    end
 %% Define features to be extracted: Check feature_label.mat for reference
     fea_range=1:numel(feature_label);
 %% Initiating the feature storage
@@ -82,7 +86,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
             %if feaidx==1
             %    fitoption_(1)=1;
             %end
-            if feaidx==10
+            if (any([2 3 6 10 11 12 15 17:26]==feaidx))||(skipfit)
                 % Find interphase duration
                 for ts=ts_spec
                     % Default value

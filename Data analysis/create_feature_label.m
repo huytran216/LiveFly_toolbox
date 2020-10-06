@@ -18,12 +18,14 @@
     %       % 18. Mean Spot Intensity (only expressing nuclei (trimmed traces) including non-expressing frames)
     %       % 19. Mean Spot Intensity (only expressing nuclei and expressing frames)
     %       % 20. Mean PSpot (including non-expressing nuclei)
-    %       % 21. Mean PSpot (only non-expressing nuclei (full traces))
-    %       % 22. Mean PSpot (only non-expressing nuclei (trimmed traces))
+    %       % 21. Mean PSpot (only expressing nuclei (full traces))
+    %       % 22. Mean PSpot (only expressing nuclei (trimmed traces))
     %       % 23. Mean Spot Intensity (after 1st spot appearance, 1st burst only, with a time limit)
     %       % 24. Mean Pspot (after 1st spot appearance, 1st burst only, with a time limit)
     %       % 25. Mean Spot Intensity (after 1st spot appearance, within a time window)
     %       % 26. Mean Pspot (after 1st spot appearance, within a time window)
+    %       % 27. Number of burst (whole trace)
+    %       % 28. Number of burst (within a window)
 feature_label={'ON',... 1
     't_{init}%',...2
     't_{end}%',... 3
@@ -50,6 +52,8 @@ feature_label={'ON',... 1
     'P_{Spot}_{burst}',...24
     '\mu_{I}_{ONwindow}',...25
     'P_{Spot}_{ONwindow}',...26
+    'N_{burst}',...27
+    'N_{burst}_{window}',...28
     };
 Nfea=numel(feature_label);
 save('feature_label.mat','feature_label','Nfea');
