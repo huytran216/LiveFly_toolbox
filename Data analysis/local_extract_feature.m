@@ -86,7 +86,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
             %if feaidx==1
             %    fitoption_(1)=1;
             %end
-            if (any([2 3 6 10 11 12 15 17:26]==feaidx))||(skipfit)
+            if (~any([1 4 5 7 8 9 13 14 16 20]==feaidx))||(skipfit)
                 % Find interphase duration
                 for ts=ts_spec
                     % Default value

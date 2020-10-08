@@ -18,7 +18,8 @@ for nc=nc_range
         NSAMPLE = [];
         for i=1:numel(compare_list)
             cnt2=cnt2+1;
-            load(fullfile(fld,folder{trimmed_trace+1},DatasetFile{i}),'pos_range','mf_rec','nf_rec','sf_rec','nf_indi','mf_indi','sf_indi','FitRes','samplef_rec','samplex_rec');
+            load(fullfile(fld,folder{istrimed_range(fea_range == fea)+1},DatasetFile{i}),...
+                'pos_range','mf_rec','nf_rec','sf_rec','nf_indi','mf_indi','sf_indi','FitRes','samplef_rec','samplex_rec');
             % Get confidence interval of inferreable params
                 tsfirst = find(FitRes(nc-8).xborder_rec(fea,:),1,'first');
                 noembryo(i,nc) = sum(FitRes(nc-8).vborder_rec(fea,:)~=0);

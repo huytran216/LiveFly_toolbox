@@ -11,13 +11,13 @@ Nsample_indi=5; % Minimum nuclei per embryo per position
 plot_embryo_error=0;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
-trimmed_trace = 1;      % trimmed trace (1) or not (0)
 kymo_intensity = 0;     % Plot kymograph of loci intensity (1) or Pspot (0)
 compare_1x2x = false;
 
 smooth_curve = 1;
 %% Feature to plot, plot settings
 fea_range=[1 16 20];
+istrimed_range = [1 0 0]; % Applied for trimmed traces? (size = fea_range);
 nc_range=[11 12 13];
 
 AP_limit = [-30 20];

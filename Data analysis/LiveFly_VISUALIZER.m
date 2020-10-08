@@ -389,7 +389,7 @@ set(segfigure,'Visible','on');
                     case 12
                         Deftext{i}=['0 550'];
                     case 13
-                        Deftext{i}=['0 820'];
+                        Deftext{i}=['600 820'];
                     otherwise
                         Deftext{i}=['0 10000'];    
                 end

@@ -36,7 +36,7 @@ avr = [600 750 1100];                 % Mean nc13 duration
 
 check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =0;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+plot_intensity =2;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 
 only_ON = 1;                          % Apply only to nuclei with ON signals
 %% Cook label_list
