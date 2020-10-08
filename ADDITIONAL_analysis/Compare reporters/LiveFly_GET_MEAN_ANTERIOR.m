@@ -31,12 +31,12 @@ compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
-nc_range = [13];                % Interphase duration
+nc_range = [11 12 13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
 check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =2;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+plot_intensity =0;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 
 only_ON = 1;                          % Apply only to nuclei with ON signals
 %% Cook label_list
@@ -141,7 +141,7 @@ for i = 1:numel(compare_list)
                     
                     % Extract feature: pspot, loci or spot intensty
                     if plot_intensity==0
-                        tr = tr>0;
+                        tr = double(tr>0);
                     end
                     if plot_intensity==2
                         tr(tr==0) = -1;
