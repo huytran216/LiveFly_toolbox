@@ -9,11 +9,11 @@ fld='../../Data analysis/final_dataset'; % Location of the dataset
 %% Set up data list
 
 dtset = struct('filename','','label','','pos_SS',[],'time_oSS',[]);
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = -10;
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = -8.5;
 
-dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = -13;
-dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = -8;
-dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = -6;
+dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = -14;
+dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = -7;
+dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = -5;
 dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 -28];dtset(5).time_oSS=[0 800];
 dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];
 dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];
@@ -34,7 +34,7 @@ isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 nc_range = [11 12 13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
-check_boundary = 0;                   % Scan at the anterior at the boundary
+check_boundary = 1;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
 plot_intensity =0;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 

@@ -8,7 +8,7 @@ load([fld 'feature_label.mat']);
 Nsample=5;      % Minimum total nuclei per position
 Nsample_indi=5; % Minimum nuclei per embryo per position
 
-plot_embryo_error=0;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
+plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
 kymo_intensity = 0;     % Plot kymograph of loci intensity (1) or Pspot (0)
@@ -18,12 +18,13 @@ smooth_curve = 1;
 %% Feature to plot, plot settings
 fea_range=[1 16 20];
 istrimed_range = [1 0 0]; % Applied for trimmed traces? (size = fea_range);
-nc_range=[11 12 13];
+nc_range=[13];
 
 AP_limit = [-30 20];
 close all;
-is_compare_experiments = true; % Compare between experiments
-is_compare_features = false;     % Compare between experiments, fea_range is vector, nc_range and compare_list usually scalar
+is_compare_experiments = false;  % Compare between experiments
+is_compare_features = false;    % Compare between experiments, fea_range is vector, nc_range and compare_list usually scalar
+is_make_kymo = true;            % Make kymograph
 %% Set up data list
 
 dtset = struct('filename','','label','');
@@ -74,4 +75,7 @@ if is_compare_experiments
 end
 if is_compare_features
     compare_features;
+end
+if is_make_kymo
+    show_kymo;
 end
