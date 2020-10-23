@@ -86,7 +86,9 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
             %if feaidx==1
             %    fitoption_(1)=1;
             %end
-            if (~any([1 4 5 7 8 9 13 14 16 20]==feaidx))||(skipfit)
+            % Fit only features with sigmoid like patterns
+            % if (~any([1 4 5 7 8 9 13 14 16 20]==feaidx))||(skipfit)
+            if (skipfit)
                 % Find interphase duration
                 for ts=ts_spec
                     % Default value

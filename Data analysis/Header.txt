@@ -25,9 +25,6 @@
 25. "Amp_spot1" measure of the intensity of the spot by gaussian fitting : amplitude
 26. "sigx_spot1" measure of the intensity of the spot by gaussian fitting : sigma x
 27. "sigy_spot1" measure of the intensity of the spot by gaussian fitting : sigma y
-28. "Int2d_spot1" measure of the intensity of the spot by gaussian fitting : amplitude x
-sig_ x x sig_y
-29. "bkg_spot1" measure of the intensity of the spot by gaussian fitting : estimated
-background
-30. "residuals_spot1") measure of the intensity of the spot by gaussian fitting :
-quality of the fit ??
+28. "Int2d_spot1" measure of the intensity of the spot by gaussian fitting : product(amplitude,sig_ x,sig_y)
+29. "bkg_spot1" measure of the intensity of the spot by gaussian fitting : estimated background
+30. "residuals_spot1" measure of the intensity of the spot by gaussian fitting :quality of the fit ?

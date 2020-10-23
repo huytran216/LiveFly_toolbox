@@ -23,15 +23,16 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     %       % 17. Mean Spot Intensity (only expressing nuclei (full traces) including non-expressing frames)
     %       % 18. Mean Spot Intensity (only expressing nuclei (trimmed traces) including non-expressing frames)
     %       % 19. Mean Spot Intensity (only expressing nuclei and expressing frames)
-    %       % 20. Mean PSpot (including non-expressing nuclei)
-    %       % 21. Mean PSpot (only expressing nuclei (full traces))
-    %       % 22. Mean PSpot (only expressing nuclei (trimmed traces))
-    %       % 23. Mean Spot Intensity (after 1st spot appearance, 1st burst only, with a time limit)
-    %       % 24. Mean Pspot (after 1st spot appearance, 1st burst only, with a time limit)
-    %       % 25. Mean Spot Intensity (after 1st spot appearance, within a time window)
-    %       % 26. Mean Pspot (after 1st spot appearance, within a time window)
-    %       % 27. Number of burst (whole trace)
-    %       % 28. Number of burst (within a window)
+    %       % 20. Mean Maximum Spot Intensity (only expressing nuclei and expressing frames)
+    %       % 21. Mean PSpot (including non-expressing nuclei)
+    %       % 22. Mean PSpot (only expressing nuclei (full traces))
+    %       % 23. Mean PSpot (only expressing nuclei (trimmed traces))
+    %       % 24. Mean Spot Intensity (after 1st spot appearance, 1st burst only, with a time limit)
+    %       % 25. Mean Pspot (after 1st spot appearance, 1st burst only, with a time limit)
+    %       % 26. Mean Spot Intensity (after 1st spot appearance, within a time window)
+    %       % 27. Mean Pspot (after 1st spot appearance, within a time window)
+    %       % 28. Number of burst (whole trace)
+    %       % 29. Number of burst (within a window)
     %       % SEE CREATE_FEATURE_LABEL.M FOR UPDATES
     %   threshold: threshold to define if x is significant or not
     %   dt: time resolution
@@ -45,7 +46,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     % Output:
         % res: array of features to be extracted
     %% Set initial parameters if missing
-    NFeature = 28;
+    NFeature = 29;
     res=-ones(1,NFeature);
     if nargin==0
         res=-ones(1,NFeature);
@@ -200,23 +201,29 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 else
                     res(19)=NaN;
                 end
+        % Max Spot Intensity (only expressing nuclei and expressing frames)
+                if res(4)>0
+                    res(20)=max(x(x>0));
+                else
+                    res(20)=NaN;
+                end        
         % Mean PSpot:
                 if res(4)>0
-                    res(20)=mean(x>0);
+                    res(21)=mean(x>0);
                 else
-                    res(20)=0;
+                    res(21)=0;
                 end
         % Mean PSpot (only expressing nuclei (full trace)and non-expressing frames)
                 if on_ori>0
-                    res(21)=mean(x>0);
-                else
-                    res(21)=NaN;
-                end
-        % Mean PSpot (only expressing nuclei (trimmed trace)and non-expressing frames)
-                if res(4)>0
                     res(22)=mean(x>0);
                 else
                     res(22)=NaN;
+                end
+        % Mean PSpot (only expressing nuclei (trimmed trace)and non-expressing frames)
+                if res(4)>0
+                    res(23)=mean(x>0);
+                else
+                    res(23)=NaN;
                 end
         % 23. Mean Spot Intensity (after 1st spot appearance, during the 1st burst only)
         % 24-27. Burst's fraction of time (after 1st spot appearance, duration of 1st burst divided by observation time window)
@@ -230,37 +237,37 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                         x_trim = x_ori(t0:t0+round(twindow/dt)-1);
                         x_burst = x_ori(t0:t0+toff-1);
                         if toff*dt<=twindow
-                            res(23) = mean(x_burst);
-                            res(24) = toff/round(twindow/dt);
+                            res(24) = mean(x_burst);
+                            res(25) = toff/round(twindow/dt);
                         else
-                            res(23) = mean(x_trim);
-                            res(24) = 1;
+                            res(24) = mean(x_trim);
+                            res(25) = 1;
                         end
-                        res(25) = mean(x_trim);
-                        res(26) = mean(x_trim>0);
+                        res(26) = mean(x_trim);
+                        res(27) = mean(x_trim>0);
                     else
                         % Not enough remaining time to analyze
-                        res(23)=NaN;
                         res(24)=NaN;
                         res(25)=NaN;
                         res(26)=NaN;
+                        res(27)=NaN;
                     end
                 else
-                    res(23)=NaN;
                     res(24)=NaN;
                     res(25)=NaN;
                     res(26)=NaN;
+                    res(27)=NaN;
                 end
            % N_burst: number of burst from original trace
                 if on_ori>0
-                    res(27) = sum((x_ori(2:end)>1)&(x_ori(1:end-1)==0));
+                    res(28) = sum((x_ori(2:end)>1)&(x_ori(1:end-1)==0));
                 else
-                    res(27) = 0;
+                    res(28) = 0;
                 end
            % N_burst: number of burst from a time window
-                if isnan(res(23))
-                    res(28)=NaN;
+                if isnan(res(24))
+                    res(29)=NaN;
                 else
-                    res(28) = sum((x_trim(2:end)>1)&(x_trim(1:end-1)==0))+1;
+                    res(29) = sum((x_trim(2:end)>1)&(x_trim(1:end-1)==0))+1;
                 end
     end

@@ -1,6 +1,7 @@
 function findzposition(folder,main_mov,datamat,outfile,zratio)
-    zPosColumn = 6;
-
+    zPosColumn = 6;     % Replacing the eccentricity field
+    findBGIntensity = true;
+        
     %% Begin analyzing
     n_frame = unique(datamat(:,2))';
     channel=1;               % Channel for Nuclei image (0 or 1)
@@ -21,13 +22,20 @@ function findzposition(folder,main_mov,datamat,outfile,zratio)
     %% Get metadata
     omeMeta = reader.getMetadataStore();
     z_max = omeMeta.getPixelsSizeZ(0).getValue(); % number of Z slices
+    y_max = omeMeta.getPixelsSizeX(0).getValue(); % number of X slices
+    x_max = omeMeta.getPixelsSizeY(0).getValue(); % number of X slices
     %% Create the maximum projection file
-    I=[];
-    Ispot=[];
+    % Record for spot intensity and background intensity
+    Ispot_rec = zeros(1,1);
+    Ibg_rec = zeros(1,2);
+    I=zeros(x_max,y_max,z_max);
+    Ispot=zeros(x_max,y_max,z_max);
+    % Begin scanning
     for frame=n_frame
         display([num2str(frame) '/' num2str(max(n_frame))])
         % Load the images
             for z=1:z_max
+                % Load nuclei channel
                 iPlane = reader.getIndex(z - 1, channel, frame - 1) + 1;
                 Itmp = bfGetPlane(reader, iPlane)*brightness;
                 if fsize>1
@@ -39,14 +47,15 @@ function findzposition(folder,main_mov,datamat,outfile,zratio)
                     Itmp_=Itmp;
                 end
                 I(:,:,z)=round(Itmp_/numel(quantile_threshold));
-
-                iPlane = reader.getIndex(z - 1, 1-channel, frame - 1) + 1;
-                Itmp = bfGetPlane(reader, iPlane)*brightness;
-                Ispot(:,:,z) = Itmp;
+                if findBGIntensity
+                    iPlane = reader.getIndex(z - 1, 1-channel, frame - 1) + 1;
+                    Itmp = bfGetPlane(reader, iPlane)*brightness;
+                    Ispot(:,:,z) = Itmp;
+                end
             end
         % Create projection %1
             I = convn(I,ones(1,1,max_projection)/max_projection,'same');
-            [Lx,Ly,Lz] = size(I);
+            [Lx,Ly,~] = size(I);
 
             matid_range = find(datamat(:,2)==frame);
 
@@ -60,14 +69,31 @@ function findzposition(folder,main_mov,datamat,outfile,zratio)
                 if (x-s-rim_size>1)&(x+s+rim_size<=Lx-1)&(y-s-rim_size>1)&(y+s+rim_size<=Ly-1)
                     % Find the nuclei position in z plan
                     Ilocal = I(round(x-s-rim_size:x+s+rim_size),round(y-s-rim_size:y+s+rim_size),:);
-                    Ispotlocal = Ispot(round(x-s-rim_size:x+s+rim_size),round(y-s-rim_size:y+s+rim_size),:);
                     % estimating z position:
                     Imax= max(Ilocal,[],3); thresh = median(Imax(:));
                     Ilocal_ = Ilocal > thresh;
                     Imean = mean(mean(Ilocal_,1),2);
                     w = gausswin(s*2/zratio);
                     Imean = conv(Imean(:),w,'same');
-                    [tmp,z] = max(Imean(:));
+                    [~,z] = max(Imean(:));
+                    % Get the MCP-GFP intensity inside nuclei
+                    if findBGIntensity
+                        if (z>2)&&(z<z_max-1)
+                            if datamat(id,28)>0
+                                'spot here';
+                                Ispotexact = Ispot(round(datamat(id,21)),round(datamat(id,20)),round(datamat(id,22)));
+                                Ispot_rec = [Ispot_rec;Ispotexact];
+                                if Ispotexact==255
+                                    'alert'
+                                end
+                            else
+                                'no spot here';
+                                Ispotlocal = Ispot(round(x-s-rim_size/2:x+s+rim_size/2),round(y-s-rim_size/2:y+s+rim_size/2),z-1:z+1);
+                                Ibg_rec = [Ibg_rec;mean(Ispotlocal(:)) sqrt(var(Ispotlocal(:)))];
+                            end
+                        end
+                    end
+    %                 Check for specific nuclei (if you know the id)                
     %                 if (zspot)&&(id==10504)
     %                     subplot(321);
     %                     plot(Imean(:));hold on;
@@ -98,10 +124,15 @@ function findzposition(folder,main_mov,datamat,outfile,zratio)
                     %    zbt= floor(z-s*zratio-1);
                     %    Ilocal = Ilocal(:,:,zbt+1:ceil(z+z*zratio+1));
                     %end
+                    
+                    % Update the z position
                     datamat(id,zPosColumn)=z_max*1000+z;
                  end
             end
             %plot3(datamat(matid_range,3),datamat(matid_range,4),datamat(matid_range,zPosColumn),'o');
     end
     dlmwrite(outfile,datamat,'precision',6,'Delimiter','\t');
+    if findBGIntensity
+        save([outfile '_tmp.mat'],'Ispot_rec','Ibg_rec');
+    end
 end

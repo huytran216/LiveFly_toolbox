@@ -1,4 +1,4 @@
-function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG,ShiftL,ShiftR,APole]=extract_movie(fullpath,tinterphase,BG_man)
+function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,sizerec,xspotrec,yspotrec,id,mother,daughter1,daughter2,cyclerec,dt,Imax,BG,BGsigma,ShiftL,ShiftR,APole]=extract_movie(fullpath,tinterphase,BG_man)
     % Extract the features (1:8) from the time series
     % Input:
     %    % datamat: input matrix or path to data file
@@ -16,8 +16,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,s
     %    % dt: time resolution (s)
     %    % Imax: Embryo maximum intensity 
     %% Junk correction file:
-    % Actually not needed, but needed anyway for the stupid static
-    % workspace problem
+    % Actually not needed, but needed anyway for the stupid static workspace problem
     delimiter='a';
     xlen=0;
     ylen=0;
