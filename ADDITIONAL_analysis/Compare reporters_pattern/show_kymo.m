@@ -1,14 +1,25 @@
 %% Prepare for fit of sigmoid function:
-ft = fittype( 'a/(1+exp(b*(x-c)))', 'independent', 'x', 'dependent', 'y' );
-opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-opts.Display = 'Off';
-opts.StartPoint = [0.957166948242946 0.485375648722841 0];
-if kymo_intensity
-    opts.Upper  = [100 10 20];
+if ~fixed_plateau
+    ft = fittype( 'a/(1+exp(b*(x-c)))', 'independent', 'x', 'dependent', 'y' );
+    opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+    opts.Display = 'Off';
+    opts.StartPoint = [0.957166948242946 0.485375648722841 0];
+    if kymo_intensity
+        opts.Upper  = [100 10 20];
+    else
+        opts.Upper  = [1 10 20];
+    end
+    opts.Lower = [0 0 -30];
+    opts.Upper = [1.0 1e10 30];
 else
-    opts.Upper  = [1 10 20];
+    % Find the maximum level at the plateau
+    if kymo_intensity
+        fea = 16;   % Mean intensity
+    else
+        fea = 21;   % PSpot
+    end
 end
-opts.Lower = [0 0.1 -35];
+
 
 %% Extract interphase sort by nuclear cycles
 tphase_all=cell(1,15);
@@ -26,13 +37,33 @@ xall=cell(1,numel(compare_list));
 xall_ub=cell(1,numel(compare_list));
 xall_lb=cell(1,numel(compare_list));
 avr_step = [0 cumsum(avr(nc_range-10))];
+hborder = [];
 for i=1:numel(compare_list)
-    load(fullfile(fld,folder{1},DatasetFile{i}),'heatmapI','pos_range');
+    load(fullfile(fld,folder{2},DatasetFile{i}),'heatmapI','pos_range','FitRes');
+    if fixed_plateau
+        % Extract peaked intensity
+        nc = 13;
+        tsfirst = find(FitRes(nc-8).xborder_rec(fea,:),1,'first');
+        xborder(i,fea,nc,1) = FitRes(nc-8).xborder_rec(fea,tsfirst);
+        xborder(i,fea,nc,2) = FitRes(nc-8).xborder_CI(fea,1);
+        xborder(i,fea,nc,3) = FitRes(nc-8).xborder_CI(fea,2);
+        hborder(i,fea,nc,1) = FitRes(nc-8).hborder_rec(fea,tsfirst);
+        hborder(i,fea,nc,2) = FitRes(nc-8).hborder_CI(fea,1);
+        hborder(i,fea,nc,3) = FitRes(nc-8).hborder_CI(fea,2);
+        vborder(i,fea,nc,1) = FitRes(nc-8).vborder_rec(fea,tsfirst)*2;
+        vborder(i,fea,nc,2) = FitRes(nc-8).vborder_CI(fea,1)*2;
+        vborder(i,fea,nc,3) = FitRes(nc-8).vborder_CI(fea,2)*2;
+    end
+    % holder for merged kymograph
     hall{i}=[];
     tall{i}=[];
+    % holder for fitted params
     xall{i}=[];
     xall_ub{i}=[];
     xall_lb{i}=[];
+    aall{i}=[];
+    aall_ub{i}=[];
+    aall_lb{i}=[];
     for nc=nc_range
         % Merge data from different nuclear cycle into 1 graph
         tphase_all{nc} = [tphase_all{nc} heatmapI(nc-8).tphase];
@@ -46,42 +77,72 @@ for i=1:numel(compare_list)
             ymax__(nc) = 1;
         end        
     end
-    % Find the boundary position:
+    % Find the boundary position at specific frame
     for tcnt = 1:numel(tall{i})
         htmp = hall{i}(tcnt,:);
         idselect = (pos_range(:)>=-35)&(pos_range(:)<=20);
-        [fitresult, gof] = fit( pos_range(idselect)', htmp(idselect)', ft, opts );
-        if (fitresult.a>1e-2)&&(fitresult.c>-35)
-            xall{i}(tcnt) = fitresult.c;
-            ci = confint(fitresult);
-            xall_ub{i}(tcnt) = ci(2,3);
-            xall_lb{i}(tcnt) = ci(1,3);
-        else
-            xall{i}(tcnt) = -50;
-            xall_ub{i}(tcnt) = -50;
-            xall_lb{i}(tcnt) = -50;
+        xall{i}(tcnt) = -50;
+        xall_ub{i}(tcnt) = -50;
+        xall_lb{i}(tcnt) = -50;
+        aall{i}(tcnt) = 0;
+        aall_ub{i}(tcnt) = 0;
+        aall_lb{i}(tcnt) = 0;
+        if fixed_plateau
+            maxtmp = vborder(i,fea,nc,1);
+            if maxtmp>0
+                % find anterior most change points:
+                tmp =  find(((htmp(end:-1:2)-maxtmp)<0)&((htmp(end-1:-1:1)-maxtmp)>0),1,'first');
+                if ~numel(tmp)
+                    xall{i}(tcnt) = -50;
+                else
+                    xall{i}(tcnt) = pos_range(numel(htmp)-tmp);
+                end
+            end
+        else            
+            [fitresult, gof] = fit( pos_range(idselect)', htmp(idselect)', ft, opts );
+            if (fitresult.a>1e-2)&&(fitresult.c>-35)
+                xall{i}(tcnt) = fitresult.c;
+                ci = confint(fitresult);
+                xall_ub{i}(tcnt) = ci(2,3);
+                xall_lb{i}(tcnt) = ci(1,3);
+                aall{i}(tcnt) = fitresult.a;
+                ci = confint(fitresult);
+                aall_ub{i}(tcnt) = ci(2,1);
+                aall_lb{i}(tcnt) = ci(1,1);
+            else
+                xall{i}(tcnt) = -50;
+                xall_ub{i}(tcnt) = -50;
+                xall_lb{i}(tcnt) = -50;
+                aall{i}(tcnt) = 0;
+                aall_ub{i}(tcnt) = 0;
+                aall_lb{i}(tcnt) = 0;
+            end
+            [tcnt fitresult.a xall{i}(tcnt)];
         end
-        [tcnt fitresult.a xall{i}(tcnt)]
-%         [maxtmp,x1tmp] = max(htmp);
-%         if maxtmp>0
-%            [~,x2tmp] = min(abs(htmp(x1tmp:end)-0.5*maxtmp));
-%            xall{i}(tcnt) = x2tmp+x1tmp-1;
-%         else
-%             xall{i}(tcnt) = 0;
-%         end
     end
-    figure(189);
+    figure(190);
+    subplot(2,1,1);
     color = corder(compare_list(i));
     shadedErrorBar(tall{i}',xall{i}',[xall{i}-xall_lb{i};xall_ub{i}-xall{i}]',...
         {'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,1); hold on;
+    ylim(AP_limit);
+    subplot(2,1,2);
+    color = corder(compare_list(i));
+    shadedErrorBar(tall{i}',aall{i}',[aall{i}-aall_lb{i};xall_ub{i}-aall{i}]',...
+        {'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,1); hold on;
+    ylim([0 1]);
 end
 legend show;
 %% Show kymograph
+h= figure(1);
+[ha]=tight_subplot(1, numel(compare_list), [.01 .03],[.1 .03],[.1 .1]); % Set small distance between plots
 for i=1:numel(compare_list)
     load(fullfile(fld,folder{1},DatasetFile{i}),'heatmapI','pos_range');
     %h=figure(i);set(h,'Name',['Kymograph ' DatasetLabel{i}]);
-    h= figure(1);
-    subplot(1,numel(compare_list),i);
+    figure(1);
+    axes(ha(i));
+    
+    
     for nc=nc_range        
 %       Plot into subplot
 %         subplot(numel(nc_range),1,find(nc_range==nc));

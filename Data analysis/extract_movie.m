@@ -41,6 +41,10 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,s
     startcutcycle=[0 0 0 0 0 0];
     endcutcycle=[10000 10000 10000 10000 10000 10000];
 %% Load the fix file
+    % Readjust full path if folder not found:
+    if ~exist(fullpath,'dir')
+        fullpath = alternative_path(fullpath)
+    end
     run(fullfile(fullpath,'correction.m'));
     if ~exist('rm','var')
         rm={};

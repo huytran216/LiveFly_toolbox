@@ -69,7 +69,7 @@ for nc=nc_range
                     stmp = sf_rec{fea,nc}(flttmp)./sqrt(nf_rec{fea,nc}(flttmp)-1);
                 end
                 if smooth_curve
-                    stmp_tmp = isnan(stmp);
+                    stmp_tmp = isnan(mtmp);
                     mtmp = smooth(mtmp(end:-1:1));
                     mtmp = mtmp(end:-1:1);
                     %stmp = smooth(stmp(end:-1:1));
@@ -78,6 +78,11 @@ for nc=nc_range
                     mtmp(stmp_tmp)=nan;
                 end
                 color = corder(compare_list(i));
+                if ~any(flttmp)
+                    flttmp(1:end) = true;
+                    mtmp = zeros(1,numel(flttmp));
+                    stmp = zeros(1,numel(flttmp));
+                end
                 if shaded_error_bar
                     if compare_1x2x & numel(compare_list)==2
                         if cnt2==1
@@ -85,7 +90,7 @@ for nc=nc_range
                         else
                             color=corder(4);
                         end
-                    end
+                    end                    
                     h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,1);
                 else
                     h40(cnt2)=errorbar(pos_range(flttmp),mtmp,stmp,'Display',DatasetLabel{i});
@@ -242,15 +247,15 @@ for nc=nc_range
                     num2str((v(3) - v(2))/2,'%.1f')];
                 switch fea
                     case 9
-                        header{cnti,6}=[num2str(vborder(i,fea,nc,1)/100,'%.1f') ' ' char(177) ' ' ...
-                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2))/100,'%.1f')];
+                        header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.1f') ' ' char(177) ' ' ...
+                            num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.1f')];
                     case 5
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.2f') ' ' char(177) ' ' ...
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                     case 4
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.2f') ' ' char(177) ' ' ...
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
-                    case 1
+                    otherwise
                         header{cnti,6}=[num2str(vborder(i,fea,nc,1),'%.2f') ' ' char(177) ' ' ...
                             num2str((vborder(i,fea,nc,3) - vborder(i,fea,nc,2)),'%.2f')];
                 end

@@ -58,7 +58,7 @@ load('feature_label.mat');
     trimmed = false;                                % Trimmed traces or not (default = false)
     
 
-Nsample_indi_min = 2;   % Number of samples required per bin for individual embryo
+Nsample_indi_min = 1;   % Number of samples required per bin for individual embryo
 Nsample_all_min = 2;   % Number of samples required per bin for merged embryos
 %% Create and hide the GUI figure as it is being constructed.
 segfigure = figure('Visible','on','Tag','segfigure','Position',[figX1,figY1,figX2,figY2]);
@@ -75,6 +75,9 @@ mFile = uimenu('Label','File_');
     hloadbutton = uimenu(mFile,'Label','Load dataset',...
     'Callback',@hloaddataset_Callback);
     
+    hloadbutton = uimenu(mFile,'Label','Bulk process...',...
+    'Callback',@hbulkprocess_Callback);
+
     hloadbutton = uimenu(mFile,'Label','Quick process...',...
     'Callback',@hquickprocess_Callback);
 
@@ -330,9 +333,35 @@ set(segfigure,'Visible','on');
          end
     end
 
-    % Load/Save dataset
+    % Choose and Load single dataset
     function hloaddataset_Callback(~,~)
         [FileName_,PathName_,~] = uigetfile('*.mat','Select the  file');
+        loaddataset(FileName_,PathName_);
+    end
+    
+    % Choose and Load multiple dataset:
+    function hbulkprocess_Callback(~,~)
+        [FileName_bulk,PathName_,~] = uigetfile('*.mat','Select the  files','MultiSelect','on');
+        tic
+        if iscell(FileName_bulk)==1
+            nFile = numel(FileName_bulk);
+        else
+            nFile = 1;
+        end
+        dlg = quickprocess_getsetting;
+        for i = 1:nFile
+            if nFile==1
+                FileName_=FileName_bulk;
+            else
+                FileName_=FileName_bulk{i};
+            end
+            loaddataset(FileName_,PathName_);
+            hquickprocess(dlg);
+        end
+        toc
+    end
+    % Load data set function
+    function loaddataset(FileName_,PathName_)
         try
             if FileName_
                 DatasetName=FileName_;
@@ -377,32 +406,47 @@ set(segfigure,'Visible','on');
         end
     end
 
-    % Load/Save dataset
+    % Quick process manually (isautomatic = false) 
     function hquickprocess_Callback(~,~)
-        % Imput for bulk process
-        Outtext=cell(1,numel(nc_range)+4);
-        Deftext=cell(1,numel(nc_range)+4);
-        if numel(datamat)
+        dlg = quickprocess_getsetting();
+        hquickprocess(dlg);
+    end
+
+    % Get quick process settings:
+    function dlg = quickprocess_getsetting()
+        Outtext=cell(1,numel(nc_range)+5);
+        Deftext=cell(1,numel(nc_range)+5);
             for i=1:numel(nc_range)
                 Outtext{i}=['Trim: nc' num2str(nc_range(i)) ' (from to (in second)) ' ];
                 switch nc_range(i)
                     case 12
-                        Deftext{i}=['0 550'];
+                        Deftext{i}=['450 550'];
                     case 13
                         Deftext{i}=['600 820'];
                     otherwise
-                        Deftext{i}=['0 10000'];    
+                        Deftext{i}=['0 10000'];
                 end
             end
-            Outtext{end-3}='Maximum burst duration to analyze (in second)?';
-            Deftext{end-3}='400';
-            Outtext{end-2}='Reload data files?';
-            Deftext{end-2}='0';
-            Outtext{end-1}='Rermake kymograph?';
-            Deftext{end-1}='0';
-            Outtext{end}='Refit everything?';
-            Deftext{end}='1';
+            i = numel(nc_range);
+            Outtext{i+1}='Maximum burst duration to analyze (in second)?';
+            Deftext{i+1}='400';
+            Outtext{i+2}='Reload data files?';
+            Deftext{i+2}='0';
+            Outtext{i+3}='Rermake kymograph?';
+            Deftext{i+3}='0';
+            Outtext{i+4}='Refit everything?';
+            Deftext{i+4}='1';
+            Outtext{i+5}='Save dataset?';
+            Deftext{i+5}='0';
+            
             dlg=inputdlg(Outtext,'Set the parameters for quick processing',[1 50],Deftext);
+    end
+    
+    % Quick process manually (isautomatic = false) 
+    % or with preset params (isautomatic = true);
+    function hquickprocess(dlg)
+        % Imput for bulk process
+        if numel(datamat)
             if ~numel(dlg)
                 return;
             end
@@ -415,14 +459,14 @@ set(segfigure,'Visible','on');
                     return;
                 end
             end
-            twindow = str2double(dlg{end-3});
+            twindow = str2double(dlg{i+1});
         else
             msgbox('Load movie first');
             return;
         end
         % QUICK PROCESSING
             % Load movies if specified
-            if str2double(dlg{end-2})
+            if str2double(dlg{i+2})
                 hloadmovie_Callback();
             end
             % Analyze untrimmed trace
@@ -430,11 +474,11 @@ set(segfigure,'Visible','on');
             % Reextract features:
             Re_Extract_feature();
             % Remake kymograph
-            if str2double(dlg{end-1})
+            if str2double(dlg{i+3})
                 hall_kymo_Callback();
             end
             % Refit the trace if specified
-            if str2double(dlg{end})
+            if str2double(dlg{i+4})
                 hextractfeature_Callback();
             end
             % Open magnifier
@@ -448,21 +492,37 @@ set(segfigure,'Visible','on');
                     trimmed=true;
                 %catch
                 %end
+            i = numel(nc_range);
             % Analyze trimmed trace
-            if str2double(dlg{end})
+            if str2double(dlg{i+4})
                 hextractfeature_Callback();
+            end
+            % Save the dataset
+            if str2double(dlg{i+5})
+                hsavedataset_Callback(true);
             end
     end
 
-    function hsavedataset_Callback(~,~)
-        if exist(fullfile(DatasetPath,DatasetName),'file')
-            if strcmp(questdlg('Overwrite?','Dataset file exist','Yes','No','No'),'Yes')
-                okwrite=true;
-            else
-                okwrite=false;
+    function hsavedataset_Callback(varargin)
+        okwrite = false;
+        % Check if automatic
+        if nargin==1
+            if islogical(varargin{1})
+                if varargin{1}
+                    okwrite = true;
+                end
             end
-        else
-            okwrite=true;
+        end
+        if ~okwrite
+            if exist(fullfile(DatasetPath,DatasetName),'file')
+                if strcmp(questdlg('Overwrite?','Dataset file exist','Yes','No','No'),'Yes')
+                    okwrite=true;
+                else
+                    okwrite=false;
+                end
+            else
+                okwrite=true;
+            end
         end
         if okwrite
             f=waitbar(0,'Saving');
@@ -1479,9 +1539,13 @@ set(segfigure,'Visible','on');
 
     function Update_DatasetList(idx)
         pixel_ignore_posterior = 0;
-        filename=fullfile(DatasetList(idx).Path,'correction.m');
-        C1 = strsplit(DatasetList(idx).Path,'/');
-        C2 = strsplit(DatasetList(idx).Path,'\');
+        fullpath = DatasetList(idx).Path;
+        if ~exist(fullpath,'dir')
+            fullpath = alternative_path(fullpath)
+        end
+        filename=fullfile(fullpath,'correction.m');
+        C1 = strsplit(fullpath,'/');
+        C2 = strsplit(fullpath,'\');
         if numel(C2)>numel(C1)
             C1=C2;
         end

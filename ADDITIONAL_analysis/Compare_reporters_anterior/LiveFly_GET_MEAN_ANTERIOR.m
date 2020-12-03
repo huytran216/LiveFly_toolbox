@@ -3,6 +3,7 @@
 %% Params
 addpath '..\..\Tool\hmm_dont_edit';
 addpath '..\..\Tool\hmm_dont_edit\utilities\';
+addpath '../Compare reporters_pattern';
 fld='../../Data analysis/final_dataset'; % Location of the dataset
 
 %% Select data
@@ -36,9 +37,11 @@ avr = [600 750 1100];                 % Mean nc13 duration
 
 check_boundary = 1;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =0;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+plot_intensity =0;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 
-only_ON = 1;                          % Apply only to nuclei with ON signals
+only_ON = 0;                          % Apply only to nuclei with ON signals
+nsample_min = 3;                      % Number of sample for calculation  
+fit_decay = 0;
 %% Cook label_list
 DatasetLabel = {dtset(compare_list).label};
 DatasetFile = {dtset(compare_list).filename};
@@ -125,7 +128,6 @@ for i = 1:numel(compare_list)
                     % Get traces
                     tr = interp1([datamat(id).time-datamat(id).time(1) 1e5],[datamat(id).Intensity -1e10],time_ax*tphase(tsidx)/tphase_set(tsidx));
                     tr = tr(tr>=0);
-                    
                     % Record first spot appearance - error in time alignment
                     tfirst = find(tr>0,1,'first')*dt;
                     if numel(tfirst)&(tfirst<500)&(tfirst>150)
@@ -182,7 +184,7 @@ for i = 1:numel(compare_list)
             nIrec=[];
             nIrec_real=[];
             for j=1:numel(Irec)
-                if numel(Irec{j})>3
+                if numel(Irec{j})>nsample_min
                     mIrec(j)=nanmean(Irec{j}(Irec{j}>=0));
                     sIrec(j)=sqrt(nanvar(Irec{j}(Irec{j}>=0)));
                     nIrec(j)=sum(~isnan(Irec{j}(Irec{j}>=0)));
@@ -246,11 +248,14 @@ for i = 1:numel(compare_list)
     tnormalized = [];
     tlinear_prev=0;
     tnormalized_prev = 0;
+    tmark_nc= [];
     for cycleno=nc_range
         tnormalized = [tnormalized tnormalized_prev+tax{cycleno-8}/tax{cycleno-8}(end)*avr(cycleno-10)];
+        
         tnormalized_prev = tnormalized(end);
         tlinear = [tlinear tlinear_prev+tax{cycleno-8}];
         tlinear_prev = tlinear(end);
+        tmark_nc = [tmark_nc tnormalized_prev];
     end
     maxt = numel(cell2mat(tax));
     
@@ -262,6 +267,7 @@ for i = 1:numel(compare_list)
     figure(19);
     
     h19{i}=shadedErrorBar(tnormalized,cell2mat(mIax),cell2mat(sIax)./sqrt(nI(cycleno-8)),{'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2},0.5);hold on;
+    hold on;
     xlabel('Time (s)');
     ylabel([ylb on_label]);
     % Record for comparison:
@@ -362,11 +368,16 @@ end
 legend(h21_,DatasetLabel);
 legend boxoff
 figure(19);
+ytmp = get(gcf,'YLim');
+if numel(tmark_nc)>1
+    stem(tmark_nc(1:end-1),ytmp(2)*ones(1,size(tmark_nc(1:end-1),2)),'Marker','none','LineStyle','--','color','k');
+end
 h19_ = [];
 for i = 1:numel(compare_list)
     h19_ = [h19_ h19{i}.mainLine];
 end
 legend(h19_,DatasetLabel,'Location','NorthWest');
+
 legend boxoff
 set(gcf,'Position',[362   741   818   237]);
 figure(22);
@@ -390,154 +401,156 @@ if numel(compare_list)==2
     ylabel('Mean expression ratio');
 end
 %% Plot extracted params for T0 first spot appearance
-figure(10);
-% Plot prediction:
-x = [100:10:500];
-plot(x,normcdf(x,310,50),'LineStyle','--','LineWidth',1,'color','k','Display','N(305 s, 50 s)');
-legend show;
-legend('Location','NorthWest');
-legend boxoff;
-xlim([100 500]);
-figure(11);
-cnt = 0;
-for cycleno=nc_range
-    cnt = cnt + 1;
-    subplot(numel(nc_range),2,cnt*2-1);
-    barplot_bound(mT0(cycleno-10,:),mT0_lb(cycleno-10,:),mT0_ub(cycleno-10,:),DatasetLabel);
-    ylabel('Mean T0');
-    subplot(numel(nc_range),2,cnt*2);
-    barplot_bound(sT0(cycleno-10,:),sT0_lb(cycleno-10,:),sT0_ub(cycleno-10,:),DatasetLabel);
-    ylabel('Std T0');
-end
-
-%% setup the elongation time
-load('theRightL');
-kelongation=40;
-L=ms(1:kelongation*dt:end);
-L=L/sum(L);
-sigmaT0=50/dt;
-gaussfilt = normpdf(-sigmaT0*2:sigmaT0*2,0,sigmaT0);
-gaussfilt = gaussfilt/sum(gaussfilt);
-L = conv2(gaussfilt,L,'full');
-
-%% Guessing the peak value:
-x0=[];
-nsample =0;
-for i=1:numel(compare_list)
-    x0 = [x0 Irec_{i}(end)];
-    nsample = nsample + numel(Irec_indi{i});
-end
-x0 = [x0 240*ones(1,numel(compare_list))];
-%% Fit all to one: - fit kon, koff
-fun_1 = @(x,t) x(3)*(x(1)/abs(x(1)+x(2)) + x(2)/abs(x(1)+x(2))*exp(-(t-x(4))*(x(1)+x(2)))).*(t>=x(4)); % kon, koff, Imax, toffset
-   
-% All independent params 
-    % Begin fitting
-    xcrit1 = 1:numel(compare_list)*4;
-    xord = 1:numel(xcrit1);
-    fmin1 = 1e20;
-    
-    for cnt=1:20
-        [x1_,fmin1_] = fminsearchbnd(@(x) fitall_(x,xcrit1,Irec_indi(:),time_rec_(:),fun_1,L),...
-            [rand(1,2*numel(compare_list))*0.005 x0],...
-            [repmat([1 1],1,numel(compare_list))*0.0001 x0*0],...
-            [repmat([1 1],1,numel(compare_list)) x0*100]);
-        if fmin1>fmin1_
-            fmin1=fmin1_;
-            x1=x1_;
-        end
+if fit_decay
+    figure(10);
+    % Plot prediction:
+    x = [100:10:500];
+    plot(x,normcdf(x,310,50),'LineStyle','--','LineWidth',1,'color','k','Display','N(305 s, 50 s)');
+    legend show;
+    legend('Location','NorthWest');
+    legend boxoff;
+    xlim([100 500]);
+    figure(11);
+    cnt = 0;
+    for cycleno=nc_range
+        cnt = cnt + 1;
+        subplot(numel(nc_range),2,cnt*2-1);
+        barplot_bound(mT0(cycleno-10,:),mT0_lb(cycleno-10,:),mT0_ub(cycleno-10,:),DatasetLabel);
+        ylabel('Mean T0');
+        subplot(numel(nc_range),2,cnt*2);
+        barplot_bound(sT0(cycleno-10,:),sT0_lb(cycleno-10,:),sT0_ub(cycleno-10,:),DatasetLabel);
+        ylabel('Std T0');
     end
-    % Find confidence interval:
-    ll1 = get_loglikelihood(fmin1,nsample);
-    
-% Similar kon:
-    xcrit2 = 1:numel(compare_list)*4;
+
+    %% setup the elongation time
+    load('theRightL');
+    kelongation=40;
+    L=ms(1:kelongation*dt:end);
+    L=L/sum(L);
+    sigmaT0=50/dt;
+    gaussfilt = normpdf(-sigmaT0*2:sigmaT0*2,0,sigmaT0);
+    gaussfilt = gaussfilt/sum(gaussfilt);
+    L = conv2(gaussfilt,L,'full');
+
+    %% Guessing the peak value:
+    x0=[];
+    nsample =0;
     for i=1:numel(compare_list)
-        xcrit2(i*2-1)=1;
-        xcrit2(i*2)=i+1;
-        xcrit2(end-2*numel(compare_list)+i) = 1+numel(compare_list)+i;
-        xcrit2(end-numel(compare_list)+i) = 1+2*numel(compare_list)+i;
+        x0 = [x0 Irec_{i}(end)];
+        nsample = nsample + numel(Irec_indi{i});
     end
-    fmin2 = 1e20;
-    for cnt=1:20
-        [x2_,fmin2_] = fminsearchbnd(@(x) fitall_(x,xcrit2,Irec_indi(:),time_rec_(:),fun_1,L),...
-            [rand(1,1+numel(compare_list)).*0.01 x0],...
-            [ones(1,1+numel(compare_list))*0.0001 x0*0],...
-            [ones(1,1+numel(compare_list))*1 x0*100]);
-        if fmin2>fmin2_
-            fmin2=fmin2_;
-            x2=x2_;
-        end
-    end
-    % Find confidence interval:
-    ll2 = get_loglikelihood(fmin2,nsample);
-    
-% Similar koff:
-    xcrit3 = 1:numel(compare_list)*4;
-    for i=1:numel(compare_list)
-        xcrit3(i*2-1)=i;
-        xcrit3(i*2)=numel(compare_list)+1;
-        xcrit3(end-2*numel(compare_list)+i) = 1+numel(compare_list)+i;
-        xcrit3(end-numel(compare_list)+i) = 1+2*numel(compare_list)+i;
-    end
-    fmin3 = 1e20;
-    for cnt=1:20
-        [x3_,fmin3_] = fminsearchbnd(@(x) fitall_(x,xcrit3,Irec_indi(:),time_rec_(:),fun_1,L),...
-            [rand(1,1+numel(compare_list)).*0.01 x0],...
-            [ones(1,1+numel(compare_list))*0.0001 x0*0],...
-            [ones(1,1+numel(compare_list))*1 x0*100]);
-        if fmin3>fmin3_
-            fmin3=fmin3_;
-            x3=x3_;
-        end
-    end
-    % Find confidence interval:
-    ll3 = get_loglikelihood(fmin3,nsample);
-    
+    x0 = [x0 240*ones(1,numel(compare_list))];
+    %% Fit all to one: - fit kon, koff
+    fun_1 = @(x,t) x(3)*(x(1)/abs(x(1)+x(2)) + x(2)/abs(x(1)+x(2))*exp(-(t-x(4))*(x(1)+x(2)))).*(t>=x(4)); % kon, koff, Imax, toffset
 
-display(['Independent fitting']);
-    show_info(x1(xcrit1));
-    display(['Score: ' num2str(log(fmin1))]);
- display(['Keeping kon']);
-    show_info(x2(xcrit2));
-    display(['Score: ' num2str(log(fmin2))]);
- display(['Keeping koff']);
-    show_info(x3(xcrit3));
-    display(['Score: ' num2str(log(fmin3))]);
-%% All independent params - fit ON, tau
-    
-% fun_2 = @(x,t) x(3)*(x(1) + (1-x(1))*exp(-t/x(2))); % PON, tau, Imax
-%     % Begin fitting
-%     xcrit1 = 1:numel(compare_list)*3;
-%     fmin1_2 = 1e20;
-% 
-%     for cnt=1:10
-%         [x1_,fmin1_] = fminsearchbnd(@(x) fitall_(x,xcrit1,Irec_indi(compare_list),time_rec_(compare_list),fun_2),...
-%             [rand(1,2*numel(compare_list)).*repmat([1 150],1,numel(compare_list)) x0],...
-%             [repmat([0.1 5],1,numel(compare_list)) x0*0],...
-%             [repmat([1 200],1,numel(compare_list)) x0*3]);
-%         if fmin1_2>fmin1_
-%             fmin1_2=fmin1_;
-%             x1_2=x1_;
-%         end
-%     end
-%     % Find confidence interval:
-%     ll1 = get_loglikelihood(fmin1_2,nsample);
-%% Plot individual fits:
-figure;
-cnt= 0;
-[~,Iout]=fitall_(x3,xcrit3,Irec_indi(:),time_rec_(:),fun_1,L);
-for Datasetidx = 1:numel(compare_list)
-    cnt = cnt+1;
-    subplot(numel(compare_list),1,cnt);
-    htmp = shadedErrorBar(time_rec_full{Datasetidx}/max(time_rec_full{Datasetidx})*avr(cycleno-10),Irec_full{Datasetidx},err_rec_full{Datasetidx},{'Display','data','LineStyle','-','color','k'},0.7);
-    hold on;
-    ax = [dtset(compare_list(Datasetidx)).time_oSS(1):dt:dtset(compare_list(Datasetidx)).time_oSS(2)];
-    hline = plot(dtset(compare_list(Datasetidx)).time_oSS(1)+time_rec_{Datasetidx},Iout{cnt},'Display','model','LineStyle','--','color','k','LineWidth',2);
-    ylabel(ylb);
-    xlabel('Time (s)');
-    yl = get(gca,'ylim');
-    ylim([0 yl(2)]);
-    xlim([0 1200]);
-    legend([htmp.mainLine hline],{'data','fitted'},'box','off','Location','NorthWest');
+    % All independent params 
+        % Begin fitting
+        xcrit1 = 1:numel(compare_list)*4;
+        xord = 1:numel(xcrit1);
+        fmin1 = 1e20;
+
+        for cnt=1:20
+            [x1_,fmin1_] = fminsearchbnd(@(x) fitall_(x,xcrit1,Irec_indi(:),time_rec_(:),fun_1,L),...
+                [rand(1,2*numel(compare_list))*0.005 x0],...
+                [repmat([1 1],1,numel(compare_list))*0.0001 x0*0],...
+                [repmat([1 1],1,numel(compare_list)) x0*100]);
+            if fmin1>fmin1_
+                fmin1=fmin1_;
+                x1=x1_;
+            end
+        end
+        % Find confidence interval:
+        ll1 = get_loglikelihood(fmin1,nsample);
+
+    % Similar kon:
+        xcrit2 = 1:numel(compare_list)*4;
+        for i=1:numel(compare_list)
+            xcrit2(i*2-1)=1;
+            xcrit2(i*2)=i+1;
+            xcrit2(end-2*numel(compare_list)+i) = 1+numel(compare_list)+i;
+            xcrit2(end-numel(compare_list)+i) = 1+2*numel(compare_list)+i;
+        end
+        fmin2 = 1e20;
+        for cnt=1:20
+            [x2_,fmin2_] = fminsearchbnd(@(x) fitall_(x,xcrit2,Irec_indi(:),time_rec_(:),fun_1,L),...
+                [rand(1,1+numel(compare_list)).*0.01 x0],...
+                [ones(1,1+numel(compare_list))*0.0001 x0*0],...
+                [ones(1,1+numel(compare_list))*1 x0*100]);
+            if fmin2>fmin2_
+                fmin2=fmin2_;
+                x2=x2_;
+            end
+        end
+        % Find confidence interval:
+        ll2 = get_loglikelihood(fmin2,nsample);
+
+    % Similar koff:
+        xcrit3 = 1:numel(compare_list)*4;
+        for i=1:numel(compare_list)
+            xcrit3(i*2-1)=i;
+            xcrit3(i*2)=numel(compare_list)+1;
+            xcrit3(end-2*numel(compare_list)+i) = 1+numel(compare_list)+i;
+            xcrit3(end-numel(compare_list)+i) = 1+2*numel(compare_list)+i;
+        end
+        fmin3 = 1e20;
+        for cnt=1:20
+            [x3_,fmin3_] = fminsearchbnd(@(x) fitall_(x,xcrit3,Irec_indi(:),time_rec_(:),fun_1,L),...
+                [rand(1,1+numel(compare_list)).*0.01 x0],...
+                [ones(1,1+numel(compare_list))*0.0001 x0*0],...
+                [ones(1,1+numel(compare_list))*1 x0*100]);
+            if fmin3>fmin3_
+                fmin3=fmin3_;
+                x3=x3_;
+            end
+        end
+        % Find confidence interval:
+        ll3 = get_loglikelihood(fmin3,nsample);
+
+
+    display(['Independent fitting']);
+        show_info(x1(xcrit1));
+        display(['Score: ' num2str(log(fmin1))]);
+     display(['Keeping kon']);
+        show_info(x2(xcrit2));
+        display(['Score: ' num2str(log(fmin2))]);
+     display(['Keeping koff']);
+        show_info(x3(xcrit3));
+        display(['Score: ' num2str(log(fmin3))]);
+    %% All independent params - fit ON, tau
+
+    % fun_2 = @(x,t) x(3)*(x(1) + (1-x(1))*exp(-t/x(2))); % PON, tau, Imax
+    %     % Begin fitting
+    %     xcrit1 = 1:numel(compare_list)*3;
+    %     fmin1_2 = 1e20;
+    % 
+    %     for cnt=1:10
+    %         [x1_,fmin1_] = fminsearchbnd(@(x) fitall_(x,xcrit1,Irec_indi(compare_list),time_rec_(compare_list),fun_2),...
+    %             [rand(1,2*numel(compare_list)).*repmat([1 150],1,numel(compare_list)) x0],...
+    %             [repmat([0.1 5],1,numel(compare_list)) x0*0],...
+    %             [repmat([1 200],1,numel(compare_list)) x0*3]);
+    %         if fmin1_2>fmin1_
+    %             fmin1_2=fmin1_;
+    %             x1_2=x1_;
+    %         end
+    %     end
+    %     % Find confidence interval:
+    %     ll1 = get_loglikelihood(fmin1_2,nsample);
+    %% Plot individual fits:
+    figure;
+    cnt= 0;
+    [~,Iout]=fitall_(x3,xcrit3,Irec_indi(:),time_rec_(:),fun_1,L);
+    for Datasetidx = 1:numel(compare_list)
+        cnt = cnt+1;
+        subplot(numel(compare_list),1,cnt);
+        htmp = shadedErrorBar(time_rec_full{Datasetidx}/max(time_rec_full{Datasetidx})*avr(cycleno-10),Irec_full{Datasetidx},err_rec_full{Datasetidx},{'Display','data','LineStyle','-','color','k'},0.7);
+        hold on;
+        ax = [dtset(compare_list(Datasetidx)).time_oSS(1):dt:dtset(compare_list(Datasetidx)).time_oSS(2)];
+        hline = plot(dtset(compare_list(Datasetidx)).time_oSS(1)+time_rec_{Datasetidx},Iout{cnt},'Display','model','LineStyle','--','color','k','LineWidth',2);
+        ylabel(ylb);
+        xlabel('Time (s)');
+        yl = get(gca,'ylim');
+        ylim([0 yl(2)]);
+        xlim([0 1200]);
+        legend([htmp.mainLine hline],{'data','fitted'},'box','off','Location','NorthWest');
+    end
 end

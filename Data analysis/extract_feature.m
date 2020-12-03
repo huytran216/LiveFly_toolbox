@@ -173,9 +173,12 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
         % Total duration of interphase
                 res(10)=tinterphase*dt;
         % Normalize the time feature
-                if res(4)>=0
+                if res(4)>0
                     res(11:15)=res(2:6)*dt;
                     res(2:6)=res(2:6)/length(x);
+                else
+                    res(11:15)=NaN;
+                    res(2:6)=NaN;
                 end
         % Mean Spot intensity (including non-expressing nuclei and non-expressing frame)
                 if res(4)>0
