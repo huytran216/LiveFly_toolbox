@@ -1,6 +1,7 @@
-function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x,y,limit,isplot,fitoption,erroroption)
+function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x,y,limit,isplot,fitoption,erroroption,isfitt0)
     % Detect the border position based on the cell position (x), cell
     % feature (y).
+    % If feature =10 (interphase duration), then Hill coeff = 10;
     % Input:
     %   x: 1xN embryos of cell position
     %   y: 1xN embryos of feature value
@@ -149,12 +150,12 @@ function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x
     if ~fitoption(2)
         betaidx=[betaidx numel(beta0)+(1:N)];
         beta0=[beta0 -5*ones(1,N)];
-        beta_ub=[beta_ub -1e-1*ones(1,N)];
+        beta_ub=[beta_ub -1e1*ones(1,N)];
         beta_lb=[beta_lb -1e2*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
         beta0=[beta0 -5];
-        beta_ub=[beta_ub -1e-1];
+        beta_ub=[beta_ub -1e1];
         beta_lb=[beta_lb -1e2];
     end
     %% Get function

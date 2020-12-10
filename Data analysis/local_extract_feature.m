@@ -105,9 +105,9 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
             else
                 erroroption_=[1 1 1 1];
                 if ~fitoption(4)
-                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(xaxis_all(feaidx,ts_spec),fearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_);
+                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(xaxis_all(feaidx,ts_spec),fearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_,(feaidx==10));
                 else
-                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(mxaxis_all(feaidx,ts_spec),mfearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_);
+                    [xborder,hborder,wborder,vborder,CIxborder,CIhborder,CIwborder,CIvborder]=detect_border_all(mxaxis_all(feaidx,ts_spec),mfearec_all(feaidx,ts_spec),limit,isplot,fitoption_,erroroption_,(feaidx==10));
                 end
                 % Record the border information
                 xborder_rec(feaidx,ts_spec)=xborder';
