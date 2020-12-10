@@ -72,7 +72,7 @@ function [idrec,tsrec,xrec,yrec,fearec,xborder_rec,hborder_rec,wborder_rec,vbord
                     % Record all the features
                     fearec_all_full{feaidx,tsidx}=tmp(tmp>=0);
                     xaxis_all_full{feaidx,tsidx}=xaxis(tmp>=0);
-                    yaxis_all_full{feaidx,tsidx}=yaxis(tmp>=0);
+                    yaxis_all_full{feaidx,tsidx}=yaxis(tmp>=0);                    
         end
         % 
         cnt=cnt+1;

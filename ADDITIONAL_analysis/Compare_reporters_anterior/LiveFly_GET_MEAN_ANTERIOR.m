@@ -28,14 +28,14 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 10 12];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
-nc_range = [11 12 13];                % Interphase duration
+nc_range = [13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
-check_boundary = 1;                   % Scan at the anterior at the boundary
+check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
 plot_intensity =0;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 
@@ -130,15 +130,22 @@ for i = 1:numel(compare_list)
                     tr = tr(tr>=0);
                     % Record first spot appearance - error in time alignment
                     tfirst = find(tr>0,1,'first')*dt;
-                    if numel(tfirst)&(tfirst<500)&(tfirst>150)
+                    if tfirst > 500
+                        tfirst = 550;
+                    end
+                    if ~numel(tfirst)
+                        tfirst = 550;
+                    end
+                    if tfirst>150
                         time_first(cycleno-8,total)=tfirst;
-                        trace_all_aligned{total} = tr(tfirst:min(450,numel(tr)));
-                        time_all_aligned{total}= min(450,numel(tr))-tr;
+                        tr=NaN*tr;
                     else
                         time_first(cycleno-8,total)=NaN;
-                        if tfirst<=150
-                            tr=NaN*tr;
-                        end
+                    end
+                    % Plot tfirst CDF:
+                    if numel(tfirst)&(tfirst<=500)&(tfirst>150)
+                        trace_all_aligned{total} = tr(tfirst:min(450,numel(tr)));
+                        time_all_aligned{total}= min(450,numel(tr))-tr;
                     end
                     
                     % Extract feature: pspot, loci or spot intensty
@@ -264,6 +271,8 @@ for i = 1:numel(compare_list)
 %     xlabel('Time (s)');
 %     ylabel(ylb);
 %     title(Dataset);
+
+    
     figure(19);
     
     h19{i}=shadedErrorBar(tnormalized,cell2mat(mIax),cell2mat(sIax)./sqrt(nI(cycleno-8)),{'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2},0.5);hold on;
@@ -360,6 +369,12 @@ for i = 1:numel(compare_list)
     toffset(i) = time_SS(1);
 end
 %% Plot legend:
+figure(10);
+    h = legend('show');
+    set(h,'Location','northwest');
+    xlim([150 500])
+    ylim([0 1]);
+    
 figure(21);
 h21_ = [];
 for i = 1:numel(compare_list)

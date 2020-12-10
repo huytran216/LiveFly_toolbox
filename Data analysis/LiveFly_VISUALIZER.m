@@ -342,13 +342,14 @@ set(segfigure,'Visible','on');
     % Choose and Load multiple dataset:
     function hbulkprocess_Callback(~,~)
         [FileName_bulk,PathName_,~] = uigetfile('*.mat','Select the  files','MultiSelect','on');
-        tic
+        
         if iscell(FileName_bulk)==1
             nFile = numel(FileName_bulk);
         else
             nFile = 1;
         end
         dlg = quickprocess_getsetting;
+        tic
         for i = 1:nFile
             if nFile==1
                 FileName_=FileName_bulk;
@@ -677,13 +678,13 @@ set(segfigure,'Visible','on');
  
     function hbrowse_Callback(~,~)
         if crrrow
-            explorer(DatasetList(crrrow).Path);
+            explorer(alternative_path(DatasetList(crrrow).Path));
         end
     end
 
     function hcopypath_Callback(~,~)
         if crrrow
-            clipboard('copy',DatasetList(crrrow).Path);
+            clipboard('copy',alternative_path(DatasetList(crrrow).Path));
         end
     end
     
@@ -1539,10 +1540,7 @@ set(segfigure,'Visible','on');
 
     function Update_DatasetList(idx)
         pixel_ignore_posterior = 0;
-        fullpath = DatasetList(idx).Path;
-        if ~exist(fullpath,'dir')
-            fullpath = alternative_path(fullpath)
-        end
+        fullpath = alternative_path(DatasetList(idx).Path);
         filename=fullfile(fullpath,'correction.m');
         C1 = strsplit(fullpath,'/');
         C2 = strsplit(fullpath,'\');

@@ -149,12 +149,12 @@ function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x
     if ~fitoption(2)
         betaidx=[betaidx numel(beta0)+(1:N)];
         beta0=[beta0 -5*ones(1,N)];
-        beta_ub=[beta_ub -1e-10*ones(1,N)];
+        beta_ub=[beta_ub -1e-1*ones(1,N)];
         beta_lb=[beta_lb -1e2*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
         beta0=[beta0 -5];
-        beta_ub=[beta_ub -1e-10];
+        beta_ub=[beta_ub -1e-1];
         beta_lb=[beta_lb -1e2];
     end
     %% Get function

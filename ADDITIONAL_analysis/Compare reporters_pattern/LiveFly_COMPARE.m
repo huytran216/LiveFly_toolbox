@@ -8,7 +8,7 @@ load([fld 'feature_label.mat']);
 Nsample=5;      % Minimum total nuclei per position
 Nsample_indi=5; % Minimum nuclei per embryo per position
 
-plot_embryo_error=2;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
+plot_embryo_error=0;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 2;   % Plot shaded errorbar or normal errorbar
 
 kymo_intensity = 0;     % Plot kymograph of loci intensity (1) or Pspot (0)
@@ -16,14 +16,14 @@ compare_1x2x = false;
 
 smooth_curve = 1;
 %% Feature to plot, plot settings
-fea_range=[11];
+fea_range=[2];
 istrimed_range = [0]; % Applied for trimmed traces? (size = fea_range);
-nc_range=[13];
+nc_range=[11 12 13];
 
 AP_limit = [-30 20];
 is_compare_experiments = true;  % Compare between experiments
 is_compare_features = false;     % Compare between experiments, fea_range is vector, nc_range and compare_list usually scalar
-is_make_kymo = false;             % Make kymograph
+is_make_kymo = true;             % Make kymograph
     fixed_plateau = true;        % Fixed the intensity of the plateau or not
 %% Set up data list
 
@@ -47,7 +47,7 @@ dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-compare_list = [1 2 3 4]; isBcd1X = [0 0 0 0]; % For hb-B6-H6B6 comparison
+compare_list = [11 12]; isBcd1X = [0 0 0 0]; % For hb-B6-H6B6 comparison
 %compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [1 2 3 4];isBcd1X=[0 0 0 0];

@@ -5,9 +5,17 @@ function newpath_ = alternative_path(fullpath)
 % The program will try to find the movies' data in these alternative folder,
 % If not found, move on the next one.
 % Make sure the global raw data folder's name is 'RAW'
+    force_change = true;    % Force to change the folder
+    
+    if exist(fullpath,'dir')
+        if ~force_change
+            newpath_ = fullpath;
+            return;
+        end
+    end
     newpath = ...
-        {'D:\Users\HuyT\Dropox_curie\Dropbox (UMR3664)\Data\RAW',...
-        '',...
+        {'D:\Users\HuyT\Dropox_curie\Dropbox (UMR3664)\Data\RAW',...    % Huy home computer
+        'E:\Dropbox Curie\Dropbox (UMR3664)\Data\RAW',...               % Huy work computer
         };
     newpath_ = fullpath;
     for i=1:numel(newpath)
