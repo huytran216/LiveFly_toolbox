@@ -10,23 +10,23 @@ fld='../../Data analysis/final_dataset'; % Location of the dataset
 %% Set up data list
 
 dtset = struct('filename','','label','','pos_SS',[],'time_oSS',[]);
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = -8.5;
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = [-4.9 -10];
 
-dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = -14;
-dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = -7;
-dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = -5;
-dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 -28];dtset(5).time_oSS=[0 800];
-dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];
-dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];
+dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = [-13.5 -16] ;
+dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = [-5.4 -7.5];
+dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = [-4.3 -5.5];
+dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 -28];dtset(5).time_oSS=[0 800]; dtset(5).pos_boundary = [0 0];
+dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];  dtset(6).pos_boundary = [0 0];
+dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];  dtset(7).pos_boundary = [0 0];
 
-dtset(8).filename = 'hb-II';  dtset(8).label = 'rand II';  dtset(8).pos_SS=[-32 -25];dtset(8).time_oSS=[0 800];dtset(8).pos_boundary = -8.4;
-dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'rand. III';  dtset(9).pos_SS=[-32 -27];dtset(9).time_oSS=[0 800];dtset(9).pos_boundary = -10;
+dtset(8).filename = 'hb-II';  dtset(8).label = 'rand II';  dtset(8).pos_SS=[-32 -25];dtset(8).time_oSS=[0 800];dtset(8).pos_boundary = [-8.4 -6.7];
+dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'rand. III';  dtset(9).pos_SS=[-32 -27];dtset(9).time_oSS=[0 800];dtset(9).pos_boundary = [-10 -8.0];
 
-dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';  dtset(10).pos_SS=[-32 -25];dtset(10).time_oSS=[0 800];dtset(10).pos_boundary = -15;
+dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';  dtset(10).pos_SS=[-32 -25];dtset(10).time_oSS=[0 800];dtset(10).pos_boundary = [-10.5 -13];
 
-dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dtset(11).time_oSS=[0 800];
-dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
-dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
+dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dtset(11).time_oSS=[0 800];  dtset(11).pos_boundary = [0 0];
+dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.5 0];
+dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];dtset(13).pos_boundary = [0 0];
 
 compare_list =  [1 2 10 12];                 % For B6-B9-B12 comparison
 
@@ -35,6 +35,16 @@ isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 nc_range = [13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
+boundary_type = 0;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
+if boundary_type==0
+    for i = 1:numel(dtset)
+        dtset(i).pos_boundary = -5.2;
+    end
+else
+    for i = 1:numel(dtset)
+        dtset(i).pos_boundary = dtset(i).pos_boundary(boundary_type);
+    end
+end
 check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
 plot_intensity =0;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity
@@ -126,26 +136,29 @@ for i = 1:numel(compare_list)
                     total=total+1;
                     cnt=cnt+1;
                     % Get traces
-                    tr = interp1([datamat(id).time-datamat(id).time(1) 1e5],[datamat(id).Intensity -1e10],time_ax*tphase(tsidx)/tphase_set(tsidx));
+                    tr = interp1([datamat(id).time-datamat(id).time(1) 1e5],[datamat(id).AdjustedIntensity -1e10],time_ax*tphase(tsidx)/tphase_set(tsidx));
                     tr = tr(tr>=0);
                     % Record first spot appearance - error in time alignment
                     tfirst = find(tr>0,1,'first')*dt;
-                    if tfirst > 500
-                        tfirst = 550;
-                    end
-                    if ~numel(tfirst)
-                        tfirst = 550;
-                    end
-                    if tfirst>150
-                        time_first(cycleno-8,total)=tfirst;
-                        tr=NaN*tr;
-                    else
-                        time_first(cycleno-8,total)=NaN;
-                    end
                     % Plot tfirst CDF:
                     if numel(tfirst)&(tfirst<=500)&(tfirst>150)
                         trace_all_aligned{total} = tr(tfirst:min(450,numel(tr)));
                         time_all_aligned{total}= min(450,numel(tr))-tr;
+                        %tr = tr(find(tr>0,1,'first'):end);
+                    end
+                    
+                    if datamat(id).Intensity
+                        
+                    end
+                    
+                    if ~numel(tfirst)
+                        tfirst = 2000;
+                    end
+                    if tfirst>150
+                        time_first(cycleno-8,total)=tfirst;
+                    else
+                        time_first(cycleno-8,total)=200;
+                        tr=NaN*tr;
                     end
                     
                     % Extract feature: pspot, loci or spot intensty
@@ -372,7 +385,8 @@ end
 figure(10);
     h = legend('show');
     set(h,'Location','northwest');
-    xlim([150 500])
+    legend boxoff;
+    xlim([150 800])
     ylim([0 1]);
     
 figure(21);

@@ -18,7 +18,7 @@ function [b] = barplot_bound_width(x,x_lb,x_ub,y,y_lb,y_ub,label,baseline,orient
             b(1).BaseValue = baseline(1);
             ylim(baseline);
         end
-
+        
     else
         x = x(end:-1:1);
         x_lb = x_lb(end:-1:1);
@@ -48,6 +48,7 @@ function [b] = barplot_bound_width(x,x_lb,x_ub,y,y_lb,y_ub,label,baseline,orient
             xl = get(gca,'xlim');
             xlim(baseline);
         end
+        h=gca; h.YAxis.TickLength = [0 0];
     end
     
     

@@ -147,16 +147,21 @@ function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x
         beta_ub=[beta_ub 50];
         beta_lb=[beta_lb -50];
     end
+    if ~isfitt0
+        H_ = [-5 -20 -0.1];
+    else
+        H_ = [-20 -21 -19];
+    end
     if ~fitoption(2)
         betaidx=[betaidx numel(beta0)+(1:N)];
-        beta0=[beta0 -5*ones(1,N)];
-        beta_ub=[beta_ub -1e1*ones(1,N)];
-        beta_lb=[beta_lb -1e2*ones(1,N)];
+        beta0=[beta0 H_(1)*ones(1,N)];
+        beta_ub=[beta_ub H_(3)*ones(1,N)];
+        beta_lb=[beta_lb H_(2)*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
-        beta0=[beta0 -5];
-        beta_ub=[beta_ub -1e1];
-        beta_lb=[beta_lb -1e2];
+        beta0=[beta0 H_(1)];
+        beta_ub=[beta_ub H_(3)];
+        beta_lb=[beta_lb H_(2)];
     end
     %% Get function
     fun=@mean;
