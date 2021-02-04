@@ -28,11 +28,11 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.5 0];
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];dtset(13).pos_boundary = [0 0];
 
-compare_list =  [1 2 10 12];                 % For B6-B9-B12 comparison
+compare_list =  [11];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
-nc_range = [13];                % Interphase duration
+nc_range = [11 12 13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
 boundary_type = 0;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)

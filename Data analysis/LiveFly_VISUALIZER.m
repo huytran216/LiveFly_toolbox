@@ -1197,7 +1197,11 @@ set(segfigure,'Visible','on');
         trimmed=false;
         mkdir('tmp');
         [~,tmp]=fileparts(DatasetName);
-        save(['tmp/' tmp],'pos_range','heatmapI','-append');
+        if exist(['tmp/' tmp],'file')
+            save(['tmp/' tmp],'pos_range','heatmapI','-append');
+        else
+            save(['tmp/' tmp],'pos_range','heatmapI');
+        end
     end
 
     function hall_table_summary_Callback(~,~)

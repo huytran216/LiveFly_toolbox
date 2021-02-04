@@ -285,6 +285,14 @@ for i=1:cnt
     legend boxoff
     set(gca,'XTick',round((AP_limit(1):10:AP_limit(2))/5)*5);    
 
+    figure(41);
+    subplot(numel(nc_range),numel(fea_range),i);
+    xlim(AP_limit);
+    ylim([0 1.1]);
+    h=legend(h41(1:numel({dtset(compare_list).label})),DatasetLabel);
+    legend boxoff
+    set(gca,'XTick',round((AP_limit(1):10:AP_limit(2))/5)*5);   
+    
     figure(42);
     subplot(numel(nc_range),numel(fea_range),i);
     xlim(AP_limit);
@@ -293,5 +301,6 @@ for i=1:cnt
     else
         ylim([ymin(rec_fea(i)) ymax(rec_fea(i))]);
     end
+    legend boxoff
     set(gca,'XTick',round((AP_limit(1):5:AP_limit(2))/5)*5);
 end

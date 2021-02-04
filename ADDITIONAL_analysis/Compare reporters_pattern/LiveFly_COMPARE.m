@@ -19,12 +19,12 @@ smooth_curve = 1;
 fea_range=[21];
 istrimed_range = [1]; % Applied for trimmed traces? (size = fea_range);
 
-nc_range=[13];
+nc_range=[11 12 13];
 
 AP_limit = [-30 20];
 is_compare_experiments = true;  % Compare between experiments
 is_compare_features = false;     % Compare between experiments, fea_range is vector, nc_range and compare_list usually scalar
-is_make_kymo = false;             % Make kymograph
+is_make_kymo = true;             % Make kymograph
     fixed_plateau = true;        % Fixed the intensity of the plateau or not
 %% Set up data list
 
@@ -47,8 +47,9 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6';
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
+dtset(14).filename = 'B6near+hbprom';  dtset(14).label = 'B6-hb-P2';
 %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-compare_list = [1 2 3 4]; isBcd1X = [0 0 0 0 0 0]; % For hb-B6-H6B6 comparison
+compare_list = [2 12]; isBcd1X = [0 0 0 0 0 0]; % For hb-B6-H6B6 comparison
 %compare_list = [1 2 3 7 1 2 3 7];isBcd1X=[0 0 0 0 1 1 1 1]; % For hb-B6-H6B6 comparison, 1x2x
 %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
 %compare_list = [1 2 3 4];isBcd1X=[0 0 0 0];
