@@ -39,7 +39,7 @@ for nc=nc_range
             % Calculate number of embryo per position
                 for j=1:size(nf_indi,3)
                     if numel(nf_indi{1,nc,j})
-                        ne_rec=ne_rec+(nf_indi{1,nc,j}>Nsample_indi);
+                        ne_rec=ne_rec+(nf_indi{1,nc,j}>=Nsample_indi);
                     end
                 end
             % Calculate mean of indi curve:
@@ -48,8 +48,8 @@ for nc=nc_range
                         tmp=mf_indi{fea,nc,j};
                         tmp(isnan(tmp))=0;
                         nf_indi{1,nc,j}(isnan(nf_indi{1,nc,j}))=0;
-                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>Nsample_indi);
-                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>Nsample_indi)).^2;
+                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>=Nsample_indi);
+                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>=Nsample_indi)).^2;
                     end
                 end
                 mf_indi_=mf_indi_./ne_rec;
@@ -60,7 +60,7 @@ for nc=nc_range
                 subplot(numel(nc_range),numel(fea_range),cnt);
                 color_order = get(gca,'colororder');
                 set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
-                flttmp = nf_rec{fea,nc}>Nsample;
+                flttmp = nf_rec{fea,nc}>Nsample_min;
                 if plot_embryo_error
                     mtmp = mf_indi_(flttmp);
                     stmp = sf_indi_(flttmp)./sqrt(ne_rec(flttmp)-1);

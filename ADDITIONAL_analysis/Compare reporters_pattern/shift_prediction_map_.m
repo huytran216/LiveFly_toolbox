@@ -1,4 +1,4 @@
-function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = shift_prediction_map(pos_range1,mIin1, sIin1,pos_range2,mIin2, sIin2)
+function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = shift_prediction_map_(pos_range1,mIin1, sIin1,pos_range2,mIin2, sIin2)
     % Expand pos_range by patching data with maximum and mininum:
     pos_range1_ = [pos_range1-numel(pos_range1) pos_range1() pos_range1+numel(pos_range1)];
     pos_range2_ = [pos_range2-numel(pos_range2) pos_range2() pos_range2+numel(pos_range2)];
@@ -26,21 +26,19 @@ function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = 
 
     % Predicting expression probabilty: discretize expression level first
     ax_I = linspace(-max([sIin1_*3;sIin2_*3]),max([mIin1_+sIin1_*3;mIin2_+sIin2_*3]),1000);
-    % Prepare matrix G:
-    matI2 = zeros(numel(ax_I)+1,numel(mIin2_));
-    for j=1:numel(mIin2_)
-        matI2(1:numel(ax_I),j) = normpdf(ax_I,mIin2_(j),sIin2_(j));
+    pIin_all = ax_I*0;
+    for i = 1:numel(mIin2_)
+        pIin_all = pIin_all + normpdf(ax_I,mIin2_(i),sIin2_(i));
     end
-    matI2(end,:)=ones(1,numel(mIin2_));
     % Prepare the map
     pos_prediction_map = zeros(numel(mIin1_),numel(mIin2_));
     for i = 1:numel(mIin1_)
         for j=1:numel(mIin2_)
-            tmp_sum = (sIin1_(i)^2+sIin2_(j)^2);
-            tmp_coeff = sIin1_(i)^2*sIin2_(j)^2/tmp_sum;
-            
-            pos_prediction_map(i,j) = exp(-(tmp_coeff*(mIin1_(i)-mIin2_(j))^2/tmp_sum + ...
-                tmp_coeff*log(2*pi*(tmp_sum)))/2/tmp_coeff);
+            tmp = ...
+                    normpdf(ax_I,mIin1_(i),sIin1_(i)).*...
+                    normpdf(ax_I,mIin2_(j),sIin2_(j))./...
+                    1;%pIin_all;
+            pos_prediction_map(i,j) = nansum(tmp);
         end
         pos_prediction_map(i,:)=pos_prediction_map(i,:)/sum(pos_prediction_map(i,:));
     end
@@ -69,6 +67,7 @@ function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = 
     
     % Plot the results:
     %HeatMap_(pos_prediction_map',ax,ay-ax,[0 max(pos_prediction_map(:))]);
+    subplot(122);
     HeatMap_(pos_prediction_map_',pos_range1,pos_range2,[0 max(pos_prediction_map(:))]);
     hold on;
     plot3(pos_range1(:),pos_range1(:)*0,pos_range1(:)*0+1,'LineStyle','--','color','k','LineWidth',1);

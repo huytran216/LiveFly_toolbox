@@ -28,18 +28,18 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-20 20];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -25];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = -15;
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];
 
-compare_list =  [10];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
 nc_range = [13];                % Interphase duration
 avr = [600 750 1100];                 % Mean nc13 duration
 
-check_boundary = 0;                   % Scan at the anterior at the boundary
+check_boundary = 1;                   % Scan at the anterior at the boundary
     dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =1;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+plot_intensity =0;                   % 0 for pspot, 1 for loci intensity, 2 for spot intensity
 
-only_ON = 1;                          % Apply only to nuclei with ON signals
+only_ON = 0;                          % Apply only to nuclei with ON signals
 %% Cook label_list
 DatasetLabel = {dtset(compare_list).label};
 DatasetFile = {dtset(compare_list).filename};
@@ -72,6 +72,7 @@ scale_time = 1;                     % Scaling interphase by mean interphase dura
     end
 %% Begin analyzing
 Irec_indi = {};
+T0_rec = {};
 h21=[];
 maxmI = [];
 for i = 1:numel(compare_list)
@@ -223,7 +224,7 @@ for i = 1:numel(compare_list)
             subplot(1,numel(nc_range),find(nc_range==cycleno));
         end
         [tmp,ax] = ecdf(time_first(cycleno-8,:));
-        
+        T0_rec{i} = time_first(cycleno-8,~isnan(time_first(cycleno-8,:)));
         plot(ax,tmp,'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2);
         ylabel('CDF(T_0)');
         xlabel('Time (s)');

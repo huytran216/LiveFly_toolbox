@@ -28,7 +28,7 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.5 0];
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];dtset(13).pos_boundary = [0 0];
 
-compare_list =  [11];                 % For B6-B9-B12 comparison
+compare_list =  [2 13];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
@@ -84,6 +84,7 @@ scale_time = 1;                     % Scaling interphase by mean interphase dura
     end
 %% Begin analyzing
 Irec_indi = {};
+T0_rec = {};
 h21=[];
 maxmI = [];
 for i = 1:numel(compare_list)
@@ -244,7 +245,7 @@ for i = 1:numel(compare_list)
             subplot(1,numel(nc_range),find(nc_range==cycleno));
         end
         [tmp,ax] = ecdf(time_first(cycleno-8,:));
-        
+        T0_rec{i} = time_first(cycleno-8,~isnan(time_first(cycleno-8,:)));
         plot(ax,tmp,'Display',DatasetLabel{i},'color',corder(compare_list(i)),'LineWidth',2);
         ylabel('CDF(T_0)');
         xlabel('Time (s)');

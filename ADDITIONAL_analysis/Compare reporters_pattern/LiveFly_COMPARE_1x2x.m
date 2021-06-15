@@ -1,22 +1,24 @@
 %% Re-extract all features in all strains before running the script
 % THe data should be in Data_analysis/
+function LiveFly_COMPARE_1x2x(compare_list,isBcd1X)
 warning off;
+close all;
 %% Params
 fld='../../Data analysis/';
 load([fld 'feature_label.mat']);
 
-Nsample_min=2;              % Minimum total nuclei per position
-Nsample_per_embryo_min=2;   % Minimum nuclei per embryo per position
-Nembryo_min = 2;            % Mininum number of embryo per position
+Nsample_min=5;              % Minimum total nuclei per position
+Nsample_per_embryo_min=5;   % Minimum nuclei per embryo per position
+Nembryo_min = 0;            % Mininum number of embryo per position
 
-plot_embryo_error=0;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
+plot_embryo_error=1;    % plot error based on embryo diversity (1) or nuclei error (merged, 0)
 shaded_error_bar = 1;   % Plot shaded errorbar or normal errorbar
 
-trimmed_trace = 1;      % trimmed trace (1) or not (0)
+
 smooth_curve = 1;
 normalize_intensity = 0;
 
-fit_lambda = 0;
+fit_lambda = 1;
     impose_fit = 1;
 %% Set up data list
 
@@ -39,14 +41,16 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6';
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
-%compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-%compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-compare_list = [1 2 3 4 1 2 3 4];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
-%compare_list = [12 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
-%compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
-%compare_list = [7 7];isBcd1X=[0 1];
-%compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
-%compare_list = [3 3];isBcd1X=[0 1];
+if nargin==0
+    %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
+    %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
+    compare_list = [1 1];isBcd1X=[0 1]; % For hb-B6-H6B6 comparison, 1x2x
+    %compare_list = [12 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
+    %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
+    %compare_list = [7 7];isBcd1X=[0 1];
+    %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
+    %compare_list = [3 3];isBcd1X=[0 1];
+end
 
 % Set folder containing mean data (contain dash)
 folder={};
@@ -58,14 +62,20 @@ avr = [600 750 1100];                % Mean nc13 duration
 DatasetLabel = {dtset(compare_list).label};
 DatasetFile = {dtset(compare_list).filename};
 for i=1:numel(compare_list)
-    if isBcd1X(i)
-        DatasetLabel{i}=[DatasetLabel{i} '-Bcd1X'];
-        DatasetFile{i}=[DatasetFile{i} '-Bcd1X'];
-        compare_1x2x = true;
+    switch isBcd1X(i)
+        case 0
+            DatasetLabel{i}=[DatasetLabel{i} ''];
+        case 1
+            DatasetFile{i}=[DatasetFile{i} '-Bcd1X'];
+            compare_1x2x = true;
+        case 2
+            DatasetFile{i}=[DatasetFile{i} '-dBcd'];
+            compare_1x2x = true;
     end
 end
 %% Feature to plot, plot settings
-fea_range=[21];
+fea_range=[1];
+trimmed_trace = 0;      % trimmed trace (1) or not (0)
 nc_range=[13];
 
 AP_limit = [-32 20]; % for B6-B9-B12
@@ -116,7 +126,7 @@ for nc=nc_range
             % Calculate number of embryo per position
                 for j=1:size(nf_indi,3)
                     if numel(nf_indi{1,nc,j})
-                        ne_rec=ne_rec+(nf_indi{1,nc,j}>=Nsample_per_embryo_min);
+                        ne_rec=ne_rec+(nf_indi{1,nc,j}>Nsample_per_embryo_min);
                     end
                 end
             % Calculate mean of indi curve:
@@ -125,8 +135,8 @@ for nc=nc_range
                         tmp=mf_indi{fea,nc,j};
                         tmp(isnan(tmp))=0;
                         nf_indi{1,nc,j}(isnan(nf_indi{1,nc,j}))=0;
-                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>=Nsample_per_embryo_min);
-                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>=Nsample_per_embryo_min)).^2;
+                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>Nsample_per_embryo_min);
+                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>Nsample_per_embryo_min)).^2;
                     end
                 end
                 mf_indi_=mf_indi_./ne_rec;
@@ -142,25 +152,26 @@ for nc=nc_range
                     stmp = sf_rec{fea,nc}(flttmp)./sqrt(nf_rec{fea,nc}(flttmp)-1);
                 end
             % Smooth curve if specified
-                if smooth_curve
-                    stmp_tmp = isnan(stmp);
+                if (~fit_lambda) & smooth_curve
                     mtmp = smooth(mtmp(end:-1:1));
                     mtmp = mtmp(end:-1:1);
                     %stmp = smooth(stmp(end:-1:1));
                     %stmp = stmp(end:-1:1);
                     %stmp(stmp_tmp)=nan;
-                    mtmp(stmp_tmp)=nan;
                 end
+                stmp_tmp = isnan(stmp);
+                mtmp(stmp_tmp)=nan;
+                mtmp = mtmp(:);
             % Normalize by intensity
                 if normalize_intensity
                     mtmp = mtmp/vborder(i,fea,nc,1);
                     stmp = stmp/vborder(i,fea,nc,1);
                 end
             % Determine color based on 1x or 2x
-                if isBcd1X(i)==1
-                    color=corder(2);
-                else
+                if isBcd1X(i)==0
                     color=corder(4);
+                else
+                    color=corder(2);
                 end
             % Plot mean curve with error, in individual figures
                 figure(20+original_i);
@@ -173,8 +184,8 @@ for nc=nc_range
                     % Plot only one construct
                     subplot(numel(nc_range),numel(fea_range),cnt);
                 end
-                if shaded_error_bar                    
-                    h20(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,2);
+                if shaded_error_bar
+                    h20(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},1,2);
                 else
                     h20(cnt2)=errorbar(pos_range(flttmp),mtmp,stmp,'Display',DatasetLabel{i},'color',color);
                 end
@@ -188,7 +199,7 @@ for nc=nc_range
                 subplot(1,numel(compare_list)/2,original_i);
                 title(DatasetLabel{original_i});
                 if shaded_error_bar                    
-                    h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},0.8,1);
+                    h40(cnt2)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'color',color,'Display',DatasetLabel{i},'LineWidth',2},1,2);
                 else
                     h40(cnt2)=errorbar(pos_range(flttmp),mtmp,stmp,'Display',DatasetLabel{i},'color',color,'LineWidth',2);
                 end
@@ -203,7 +214,7 @@ for nc=nc_range
                 hold on;
             % Plot prediction of position based on expression alone
                 figure(80+original_i);
-                subplot(1,2,1+isBcd1X(i));
+                subplot(1,2,1+(isBcd1X(i)>0));
                 position_prediction_map(pos_range(flttmp),mtmp,stmp);
                 title(DatasetLabel{i});
                 
@@ -217,9 +228,9 @@ for nc=nc_range
                 mIall(1:tmpf-1)=nanmean(mtmp(pos_range(flttmp)<scanwindow(1)));
                 sIall(1:tmpf-1)=nanmean(stmp(pos_range(flttmp)<scanwindow(1)));
                 
-                mI_rec{original_i,1+isBcd1X(i)}=mIall;
-                sI_rec{original_i,1+isBcd1X(i)}=sIall;
-                pos_rec{original_i,1+isBcd1X(i)}=pos_range;
+                mI_rec{original_i,1+(isBcd1X(i)>0)}=mIall;
+                sI_rec{original_i,1+(isBcd1X(i)>0)}=sIall;
+                pos_rec{original_i,1+(isBcd1X(i)>0)}=pos_range;
         end
         % Make a table out of it: constructs are put vertically
             header={};
@@ -296,6 +307,7 @@ for i=1:numel(compare_list)/2
     pos_range2 = pos_rec{i,2}>=-30;
     figure(20+i);
     subplot(1,2,2);
+    figure;
     [diff_plot{i},ax,ay,diff_grid{i},prange1,prange2]=shift_prediction_map(pos_rec{i,1}(pos_range1),mI_rec{i,1}(pos_range1),sI_rec{i,1}(pos_range1),...
         pos_rec{i,2}(pos_range2),mI_rec{i,2}(pos_range2),sI_rec{i,2}(pos_range2));
     
@@ -335,18 +347,20 @@ end
 
     % Plot combined probability map
         figure(7);
-        HeatMap_(log(diff_grid_all'+1e-10),prange1,prange2,[log(1e-10) log(max(diff_grid_all(:)))]);
+        HeatMap_(log(diff_grid_all'+1e-10),prange1,prange2,[log(1e-4) log(max(diff_grid_all(:)))]);
+        plot3(prange1(:),prange1(:)*0,prange1(:)*0+log(max(diff_grid_all(:))),'LineStyle','-','color','k','LineWidth',1);
         hold on;
-        h = plot3(prange1(:),prange1(:)*0 - 14,prange1(:)*0+log(max(diff_grid_all(:))),'LineStyle','--','color','r','LineWidth',1,'Display','Theory');
-        legend(h,'Theory');
+        %h = plot3(prange1(:),prange1(:)*0 - 14,prange1(:)*0+log(max(diff_grid_all(:))),'LineStyle','--','color','r','LineWidth',1,'Display','Theory');
+        %legend(h,'Theory');
         
         set(gca,'Ydir','normal');
         colormap(flipud(gray));
-        xlabel('Original nuclei position (%EL)');
-        ylabel('Predicted shift (%EL)');
+        %xlabel('Original nuclei position (%EL)');
+        %ylabel('Predicted shift (%EL)');
         xlim([-30 20]);
         ylim([-30 20]);
-        zlim([log(1e-10) -1])
+        zlim([log(1e-20) -1])
+        set(gcf,'Position',[680   675   414   303]);
 %% Summary
 % figure(107);
 % subplot(121);
@@ -404,7 +418,7 @@ end
             dat(modelidx).fun = fun;
 
             ax_ = prange1(1,:);
-            ax_fit = [-20:10]; % Range of scan for shift in 2X, that is used in fitting:
+            ax_fit = [-30:10]; % Range of scan for shift in 2X, that is used in fitting:
             ratio = 0.5;      % change in Bcd level
 
             infsmall = 1e-10;
@@ -435,7 +449,7 @@ end
                 (-ax_(1)+1+round(find_displacement(y0,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,ax_fit,ratio)))...
                 ))));
             
-            nitr = 2;
+            nitr = 10;
             if fit_lambda
                 switch model 
                     case 'exp'
@@ -469,8 +483,7 @@ end
                 dat(modelidx).beta_best = beta_best;
                 dat(modelidx).f0 = f0;
             else
-                dat(modelidx).beta_best = 10.4126;
-                dat(modelidx).f0 = 284.3418;
+                % imposing lambda
             end
         end
     %% Plot the results
@@ -490,11 +503,12 @@ end
         
         set(gca,'Ydir','normal');
         colormap(flipud(gray));
-        xlabel('Original nuclei position (%EL)');
-        ylabel('Predicted shift (%EL)');
+        %xlabel('Original nuclei position (%EL)');
+        %ylabel('Predicted shift (%EL)');
         xlim([-30 20]);
         ylim([-30 20]);
-        zlim([log(1e-10) -1])
+        zlim([-30 -.1]);
+        set(gcf,'Position',[680   675   414   303]);
         
     for modelidx = 1:numel(model_range)
         model = model_range{modelidx};
@@ -525,8 +539,9 @@ end
         hold on;
         h2 = plot3(pos_range,fun_dx,pos_range*0-1,'LineStyle','--','LineWidth',2,'Display',model,'color','g');
     end
-    plot3(pos_range,pos_range*0,pos_range*0-1,'LineStyle','-','color','k','LineWidth',0.5);
-    legend([h2,h1],{'|\Delta(\it{x)|','Theory'},'box','off')
+    plot3(pos_range,pos_range*0,pos_range*0-1,'LineStyle','-','color','k','LineWidth',1);
+    caxis([-10 -1]);
+    %legend([h2,h1],{'|\Delta(\it{x)|','Theory'},'box','off')
     box on;
     figure(108);
     subplot(1,3,1);legend show;
@@ -543,4 +558,15 @@ if impose_fit
         subplot(1,numel(compare_list)/2,i);
         plot(pos_rec{i,1}-dat(modelidx).beta_best*log(2),mI_rec{i,1},'--k')        
     end
+end
+
+%% Save data:
+if fit_lambda
+    mkdir('shift_rec');
+    filename = [num2str(compare_list) '_' num2str(isBcd1X) '_nc' num2str(nc_range)];
+    save(['shift_rec/' filename]);
+    figure(107);
+    saveas(gcf,['shift_rec/logmap_' filename]);
+    figure(40);
+    saveas(gcf,['shift_rec/pattern_' filename]);
 end
