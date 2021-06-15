@@ -1,6 +1,6 @@
 %% Re-extract all features in all strains before running the script
 % THe data should be in Data_analysis/
-function LiveFly_COMPARE_1x2x(compare_list,isBcd1X)
+function LiveFly_COMPARE_1x2x(compare_list,isBcd1X,fea_range,trimmed_trace,nc_range)
 warning off;
 close all;
 %% Params
@@ -74,9 +74,11 @@ for i=1:numel(compare_list)
     end
 end
 %% Feature to plot, plot settings
-fea_range=[1];
-trimmed_trace = 0;      % trimmed trace (1) or not (0)
-nc_range=[13];
+if nargin==0
+    fea_range=[1];
+    trimmed_trace = 0;      % trimmed trace (1) or not (0)
+    nc_range=[13];
+end
 
 AP_limit = [-32 20]; % for B6-B9-B12
 
