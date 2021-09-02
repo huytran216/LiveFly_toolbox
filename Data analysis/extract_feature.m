@@ -74,13 +74,14 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
     end
     % Remove too dim spots
     x(x<threshold)=0;
-    % Remove single-frame off time and single-frame spots:
+    % Remove too short spots or dip
+        % Single frame
         for i=2:numel(x)-1
-            if (x(i)==0)&&(x(i-1)>0)&&(x(i+1)>0)
-                x(i)=mean([x(i-1),x(i+1)]);
-            end
             if (x(i)>0)&&(x(i-1)==0)&&(x(i+1)==0)
                 x(i)=0;
+            end
+            if (x(i)==0)&&(x(i-1)>0)&&(x(i+1)>0)
+                x(i)=mean([x(i-1),x(i+1)]);
             end
         end
     %% Trim trace if necessary
@@ -114,18 +115,12 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
         
         % P_ON/P_OFF
                 pthresh=0.01;    % We consider the gene is ON if the spot exists for more than 1% of the observation window
-                nthresh=3;       % We consider the gene is ON if the spot exists for more 3 frames
-                if (double(sum(x_ori>0)/numel(x_ori)>=pthresh))&(sum(x_ori>0)>=nthresh)
-                    on_ori=1;
-                else
-                    on_ori=0;
-                    x_ori=x_ori*0;
-                end
-                if (double(sum(x>0)/numel(x)>=pthresh))&(sum(x>0)>=nthresh)
+                nthresh=2;       % We consider the gene is ON if the spot exists for more 3 frames
+                if (double(sum(x>0)/numel(x)>=pthresh))&&(sum(x>0)>=nthresh)
                     res(1)=1;
                 else
                     res(1)=0;
-                    x=x*0;
+                    x = x*0;
                 end
         % T_0
                 if res(1)
@@ -140,12 +135,12 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 else
                     res(3)=length(x);
                 end
-        % T_ACTIVE
+        % T_ACTIVE (from first to last spot appearance)
                 res(4)=length(x)-res(3)-res(2)+1;
                 if res(4)<0
                     res(4)=0;
                 end
-        % T_EXIST Total spot duration of existence 
+        % T_EXIST Total spot duration of existence (excluding non-burst period)
                 res(5)=sum(x>0);
         % Time to max intensity
                 Ith=Imax*2/3;
@@ -187,7 +182,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                     res(16)=0;
                 end
         % Mean Spot Intensity (only expressing nuclei (full trace)and non-expressing frames)
-                if on_ori>0
+                if res(1)>0
                     res(17)=mean(x);
                 else
                     res(17)=NaN;
@@ -217,7 +212,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                     res(21)=0;
                 end
         % Mean PSpot (only expressing nuclei (full trace)and non-expressing frames)
-                if on_ori>0
+                if res(1)>0
                     res(22)=mean(x>0);
                 else
                     res(22)=NaN;
@@ -230,7 +225,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 end
         % 23. Mean Spot Intensity (after 1st spot appearance, during the 1st burst only)
         % 24-27. Burst's fraction of time (after 1st spot appearance, duration of 1st burst divided by observation time window)
-                if on_ori>0
+                if res(1)>0
                     % Extract first spot appearance
                     t0 = find(x_ori>0,1,'first');
                     tend = min(round(trange(2)/dt),numel(x_ori));
@@ -262,7 +257,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                     res(27)=NaN;
                 end
            % N_burst: number of burst from original trace
-                if on_ori>0
+                if res(1)>0
                     res(28) = sum((x_ori(2:end)>1)&(x_ori(1:end-1)==0));
                 else
                     res(28) = 0;

@@ -106,7 +106,7 @@ for tsidx=ts_spec
     if ~time_align
         % Option 1. Find mitosis of previous cell cycle
         for i=1:numel(tmp1)
-            tmp3=datamat(tmp1(i)).time;    % Time record
+            tmp3=datamat(tmp1(i)).Adjustedtime;    % Time record
             if inittime(tsidx)>tmp3(1)
                 inittime(tsidx)=tmp3(1);
             end
@@ -114,9 +114,9 @@ for tsidx=ts_spec
     else
         % Option 2. Find 1st spot appearance
         for i=1:numel(tmp1)
-            tmp3=datamat(tmp1(i)).Intensity;
+            tmp3=datamat(tmp1(i)).AdjustedIntensity;
             tmp4=find(tmp3,1,'first');
-            tmp5=datamat(tmp1(i)).time;
+            tmp5=datamat(tmp1(i)).Adjustedtime;
             if inittime(tsidx)>tmp5(tmp4)
                 inittime(tsidx)=tmp5(tmp4);
             end
@@ -127,13 +127,13 @@ for tsidx=ts_spec
     Srec=[];        % Holder for spot appearance - merged embryo
     for i=1:numel(tmp1)
         % Find the time after the 1st spot appearance / mitosis
-        alignedidx=find(datamat(tmp1(i)).time>=inittime(tsidx));
+        alignedidx=find(datamat(tmp1(i)).Adjustedtime>=inittime(tsidx));
         if alignedidx(1)>1
             alignedidx=[alignedidx(1)-1 alignedidx];
         end
         % Get time and cell size
             % Load data
-            tmp_t=datamat(tmp1(i)).time(alignedidx)-datamat(tmp1(i)).time(alignedidx(1));   % Load Time record
+            tmp_t=datamat(tmp1(i)).Adjustedtime(alignedidx)-datamat(tmp1(i)).Adjustedtime(alignedidx(1));   % Load Time record
             tmp_s=datamat(tmp1(i)).sizerec(alignedidx);            % Load spot size record
             % Normalize the time if needed
             if time_normalize
@@ -149,7 +149,7 @@ for tsidx=ts_spec
         % Treating intensity signal - snapshot or cummulative
             for hblendcnt=[1 2]
                 % Load data
-                tmp_I=datamat(tmp1(i)).Intensity(alignedidx);          % Load Intensity record
+                tmp_I=datamat(tmp1(i)).AdjustedIntensity(alignedidx);          % Load Intensity record
                 % Apply the blending time
                 if hblendcnt==2
                     tmp_I=cumsum(tmp_I);

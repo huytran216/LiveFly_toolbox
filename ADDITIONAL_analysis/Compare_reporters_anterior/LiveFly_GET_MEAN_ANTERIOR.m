@@ -10,11 +10,11 @@ fld='../../Data analysis/final_dataset'; % Location of the dataset
 %% Set up data list
 
 dtset = struct('filename','','label','','pos_SS',[],'time_oSS',[]);
-dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = [-4.9 -10];
+dtset(1).filename = 'hb-vk33';  dtset(1).label = 'hb-P2'; dtset(1).pos_SS=[-32 -27];dtset(1).time_oSS=[0 800]; dtset(1).pos_boundary = [-4.9 -9.9];
 
-dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = [-13.5 -16] ;
-dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = [-5.4 -7.5];
-dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = [-4.3 -5.5];
+dtset(2).filename = 'B6-near';  dtset(2).label = 'B6'; dtset(2).pos_SS=[-32 -27];dtset(2).time_oSS=[0 850]; dtset(2).pos_boundary = [-12.9 -15.6] ;
+dtset(3).filename = 'B9-near';  dtset(3).label = 'B9'; dtset(3).pos_SS=[-32 -27];dtset(3).time_oSS=[0 800]; dtset(3).pos_boundary = [-5.1 -7.3];
+dtset(4).filename = 'B12-near'; dtset(4).label = 'B12'; dtset(4).pos_SS=[-32 -27];dtset(4).time_oSS=[0 850]; dtset(4).pos_boundary = [-4.2 -6.0];
 dtset(5).filename = 'B6-far';   dtset(5).label = 'B6-far'; dtset(5).pos_SS=[-35 -28];dtset(5).time_oSS=[0 800]; dtset(5).pos_boundary = [0 0];
 dtset(6).filename = 'B9-far';   dtset(6).label = 'B9-far'; dtset(6).pos_SS=[];dtset(6).time_oSS=[];  dtset(6).pos_boundary = [0 0];
 dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32 -20];dtset(7).time_oSS=[0 800];  dtset(7).pos_boundary = [0 0];
@@ -22,20 +22,20 @@ dtset(7).filename = 'B12-far';  dtset(7).label = 'B12-far'; dtset(7).pos_SS=[-32
 dtset(8).filename = 'hb-II';  dtset(8).label = 'rand II';  dtset(8).pos_SS=[-32 -25];dtset(8).time_oSS=[0 800];dtset(8).pos_boundary = [-8.4 -6.7];
 dtset(9).filename = 'hb-III-Lucas2018';  dtset(9).label = 'rand. III';  dtset(9).pos_SS=[-32 -27];dtset(9).time_oSS=[0 800];dtset(9).pos_boundary = [-10 -8.0];
 
-dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';  dtset(10).pos_SS=[-32 -25];dtset(10).time_oSS=[0 800];dtset(10).pos_boundary = [-10.5 -13];
+dtset(10).filename = 'H6B6-near';   dtset(10).label = 'H6B6';  dtset(10).pos_SS=[-32 -25];dtset(10).time_oSS=[0 800];dtset(10).pos_boundary = [-9.8 -13.3];
 
 dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dtset(11).time_oSS=[0 800];  dtset(11).pos_boundary = [0 0];
-dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.5 0];
+dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.6 -0.6];
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];dtset(13).pos_boundary = [0 0];
 
-compare_list =  [2 13];                 % For B6-B9-B12 comparison
+compare_list =  [10];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
 nc_range = [11 12 13];                % Interphase duration
-avr = [600 750 1100];                 % Mean nc13 duration
-
-boundary_type = 0;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
+avr = [600 750 1100];           % Mean nc13 duration
+avr_cut =  [450 500 800];           % Mean nc13 duration
+boundary_type = 1;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
 if boundary_type==0
     for i = 1:numel(dtset)
         dtset(i).pos_boundary = -5.2;
@@ -45,9 +45,9 @@ else
         dtset(i).pos_boundary = dtset(i).pos_boundary(boundary_type);
     end
 end
-check_boundary = 0;                   % Scan at the anterior at the boundary
-    dw = 5; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =0;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity
+check_boundary = 1;                   % Scan at the anterior at the boundary
+    dw = 3; % Set boundary width for analysis of time to reach boundary.
+plot_intensity =3;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity, 3 for ON decision
 
 only_ON = 0;                          % Apply only to nuclei with ON signals
 nsample_min = 3;                      % Number of sample for calculation  
@@ -75,6 +75,8 @@ scale_time = 1;                     % Scaling interphase by mean interphase dura
             ylb = 'Loci Intensity';
         case 2
             ylb = 'Spot Intensity';
+        case 3
+            ylb = 'Fraction of expression';
     end
     switch only_ON
         case 0 
@@ -168,6 +170,11 @@ for i = 1:numel(compare_list)
                     end
                     if plot_intensity==2
                         tr(tr==0) = -1;
+                    end
+                    if plot_intensity==3
+                        tr(isnan(tr))=0;
+                        tr = cumsum(tr);
+                        tr = double(tr>0);
                     end
                     % select only ON nuclei?
                     if only_ON
@@ -311,12 +318,16 @@ for i = 1:numel(compare_list)
     for cycleno=nc_range
         sItmp = sIax{cycleno-8}./sqrt(nIax{cycleno-8});
         mItmp = mIax{cycleno-8};
+        ttmp = tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10)> avr_cut(cycleno-10);
+        mItmp(ttmp)= 0;
+        sItmp(ttmp)= 0;
         h30i{cycleno}=shadedErrorBar(tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10),mItmp,sItmp,{'Display',['nc' num2str(cycleno)],'color',corder(cycleno)},0.5);hold on;
     end
     xlabel('normalized time');
-    ylabel(['Normalized ' ylb on_label]);
+    ylabel([ylb on_label]);
     title(DatasetLabel{i});
     legend boxoff
+    set(gcf,'Position',[520   528   341   270]);
     figure(21);
     for cycleno=nc_range
         if numel(nc_range)>1
@@ -355,7 +366,7 @@ for i = 1:numel(compare_list)
     legend(h30i_,leg(nc_range));
     legend boxoff;
     %% Get mean traces to get kon, koff
-    cycleno=13;
+    cycleno=nc_range(end);
     time_SS=dtset(compare_list(i)).time_oSS;
     time_ax = tax{cycleno-8}/max(tax{cycleno-8})*avr(cycleno-10);
     Irec = mIax{cycleno-8};

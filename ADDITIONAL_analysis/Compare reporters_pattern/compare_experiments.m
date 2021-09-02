@@ -36,26 +36,20 @@ for nc=nc_range
                 ne_rec = zeros(size(pos_range));
                 mf_indi_ = zeros(size(pos_range));
                 sf_indi_ = zeros(size(pos_range));
-            % Calculate number of embryo per position
-                for j=1:size(nf_indi,3)
-                    if numel(nf_indi{1,nc,j})
-                        ne_rec=ne_rec+(nf_indi{1,nc,j}>=Nsample_indi);
-                    end
-                end
             % Calculate mean of indi curve:
                 for j=1:size(nf_indi,3)
                     if numel(nf_indi{1,nc,j})
                         tmp=mf_indi{fea,nc,j};
-                        tmp(isnan(tmp))=0;
-                        nf_indi{1,nc,j}(isnan(nf_indi{1,nc,j}))=0;
-                        mf_indi_=mf_indi_ + tmp.*(nf_indi{1,nc,j}>=Nsample_indi);
-                        sf_indi_=sf_indi_ + (tmp.*(nf_indi{1,nc,j}>=Nsample_indi)).^2;
+                        tmp(nf_indi{1,nc,j}<Nsample_indi)=nan;
+                        valid_idx = ~isnan(tmp);
+                        ne_rec(valid_idx) = ne_rec(valid_idx) + 1;
+                        mf_indi_(valid_idx)=mf_indi_(valid_idx) + tmp(valid_idx);
+                        sf_indi_(valid_idx)=sf_indi_(valid_idx) + (tmp(valid_idx).^2);
                     end
                 end
                 mf_indi_=mf_indi_./ne_rec;
                 sf_indi_=sqrt(sf_indi_./ne_rec - mf_indi_.^2);
             % Plot mean curve with error
-            
                 figure(40);
                 subplot(numel(nc_range),numel(fea_range),cnt);
                 color_order = get(gca,'colororder');
@@ -119,6 +113,11 @@ for nc=nc_range
                 set(gcf,'Position',[100   100   400*numel(fea_range)   250*numel(nc_range)]);
                 plot(pos_range(flttmp),mtmp,'Display',DatasetLabel{i},'LineWidth',2);
                 hold on;
+            % Figure all nc into 1:
+                figure(50);
+                h50(nc)=shadedErrorBar(pos_range(flttmp),mtmp,stmp,{'Display',num2str(nc),'LineWidth',2},0.8,1); 
+                ncleg{nc} = num2str(nc);
+                hold on;
             % Calculate Spearman testz
                 sample_f{i,fea} = samplef_rec{nc-8,fea};
                 sample_x{i,fea} = samplex_rec{nc-8,fea};
@@ -133,6 +132,12 @@ for nc=nc_range
                     PVAL(i) = 1;
                     NSAMPLE(i) = 0;
                 end
+                mtmp_rec{compare_list(i)} = mtmp;
+                stmp_rec{compare_list(i)}=stmp;
+                pos_range_rec{compare_list(i)} = pos_range(flttmp);
+        end
+        if compare_list ==[1 2 3 4 10 12]
+            save(['SS_rec_' num2str(fea) '.mat'],'mtmp_rec','stmp_rec','pos_range_rec');
         end
         % Get legends and correct axis
             figure(40);
@@ -304,3 +309,16 @@ for i=1:cnt
     legend boxoff
     set(gca,'XTick',round((AP_limit(1):5:AP_limit(2))/5)*5);
 end
+
+
+figure(50);
+    xlim(AP_limit);
+    if rec_fea(i)==1
+        ylim([0 1.1])
+    else
+        ylim([ymin(rec_fea(i)) ymax(rec_fea(i))]);
+    end
+    h=legend(h50(nc_range),ncleg(nc_range));
+    set(gcf,'Position',[680   568   305   246]);
+    legend boxoff
+    set(gca,'XTick',round((AP_limit(1):10:AP_limit(2))/5)*5);    

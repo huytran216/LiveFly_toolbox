@@ -14,8 +14,8 @@ function [pos_prediction_map,ax,ay,pos_prediction_map_,pos_range1,pos_range2] = 
     sIin2(1:find(~isnan(mIin2),1,'first')-1)=sIin2(maxpt2);
     mIin2(find(~isnan(mIin2),1,'last')+1:end)=0;
     sIin2(find(~isnan(mIin2),1,'last')+1:end)=0;
-    mIin2 = [mIin2(maxpt1)*ones(1,numel(pos_range2)) mIin2 0*ones(1,numel(pos_range2))];
-    sIin2 = [sIin2(maxpt1)*ones(1,numel(pos_range2)) sIin2 0*ones(1,numel(pos_range2))];
+    mIin2 = [mIin2(maxpt2)*ones(1,numel(pos_range2)) mIin2 0*ones(1,numel(pos_range2))];
+    sIin2 = [sIin2(maxpt2)*ones(1,numel(pos_range2)) sIin2 0*ones(1,numel(pos_range2))];
     
 
     sIin1_ = sIin1(:);sIin1_(sIin1_<max(sIin1_)/10)=max(sIin1_)/10;

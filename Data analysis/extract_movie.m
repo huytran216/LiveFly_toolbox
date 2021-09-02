@@ -151,7 +151,9 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,s
     daughter2=daughter2(uniqueid);daughter2(id)=daughter2;daughter2(missingid)=0;
 %% Gather the cell intensity traces, position and lineage information
     Irec=cell(max(id),1);       % Record spot intensity
-    trec=cell(max(id),1);       % Record frame
+    trec=cell(max(id),1);       % Record time
+    AdjustedIntensity=cell(max(id),1);  % Record adjusted spot intensity
+    Adjustedtime=cell(max(id),1);       % Record adjusted time
     cyclerec=cell(max(id),1);   % Record cell cycle
     fearec=cell(max(id),1);     % Record features
     xrec=cell(max(id),1);       % Record nuclei position (in pixel)
@@ -314,6 +316,7 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,s
 %         end
         
         trec{i}=trec{i}*dt;
+        Adjustedtime{i} = Adjustedtime{i}*dt;
 %         % ALERT IF WEIRD FEATURES ARE DECTED
 %             % Early activating cell (most likely due to aggregrate)
 %             if (fearec{i}(2)<0.1)&&(fearec{i}(2)>0)&&(cyclerec{i}>9)
