@@ -44,14 +44,8 @@ dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 if nargin==0
-    %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-    %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
-    compare_list = [3 3];isBcd1X=[0 2]; % For hb-B6-H6B6 comparison, 1x2x
-    %compare_list = [12 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
-    %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
-    %compare_list = [7 7];isBcd1X=[0 1];
-    %compare_list = [1 2 10 12]; isBcd1X = compare_list*0;
-    %compare_list = [3 3];isBcd1X=[0 1];
+    compare_list = [2 2 ];isBcd1X=[0 2]; % For hb-B6-H6B6 comparison, 1x2x
+    % Format: always: compare_list = [2 3 2 3];isBcd1X=[0 0 1 1];
 end
 
 % Set folder containing mean data (contain dash)
@@ -125,7 +119,7 @@ for nc=nc_range
     cnt=cnt+1;
     for i=1:numel(compare_list)
         % Check if 1x or 2x:
-        if isBcd1X(i)
+        if i>numel(compare_list)/2
             original_i = i - numel(compare_list)/2;
         else
             original_i = i;
@@ -135,6 +129,7 @@ for nc=nc_range
             load(fullfile(fld,folder{2},DatasetFile{i}),'heatmapI','pos_range','mf_rec','sf_rec','nf_rec','nf_indi','mf_indi','sf_indi','FitRes');
         else % taking whole trace
             load(fullfile(fld,folder{1},DatasetFile{i}),'heatmapI','pos_range','mf_rec','sf_rec','nf_rec','nf_indi','mf_indi','sf_indi','FitRes');
+            nansum(mf_indi{1,13,2})
         end
         % Get confidence interval of inferreable params
             tsfirst = find(FitRes(nc-8).xborder_rec(fea,:),1,'first');
@@ -225,7 +220,11 @@ for nc=nc_range
 end
 %% Get kymograph snapshot:
 for i=1:numel(compare_list)
-    original_i = round(i/2);
+    if i>numel(compare_list)/2
+            original_i = i - numel(compare_list)/2;
+    else
+        original_i = i;
+    end
     [~,tidx] =min(abs(tall{i}-time_range(end)));
     pos_rec{original_i,1+(isBcd1X(i)>0)} = pos_range;
     mI_rec{original_i,1+(isBcd1X(i)>0)} = hall{i}(tidx,:);

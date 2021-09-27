@@ -1,10 +1,10 @@
-%idx_list = [3 1 3 1];
-%isBcdE1 = [0 0 1 1];
-%nc_list = [13 13 13 13];
-
-idx_list = [1 2 3 4 10 12];
-isBcdE1 = [1 1 1 1 1 1];
+idx_list = [2 3 1 2 3 1];
+isBcdE1 = [0 0 0 1 1 1];
 nc_list = [13 13 13 13 13 13];
+
+%idx_list = [1 2 3 4 10 12];
+%isBcdE1 = [1 1 1 1 1 1];
+%nc_list = [13 13 13 13 13 13];
 
 time_range =0; % Set to 0 if using whole trace
 if time_range==0
@@ -28,6 +28,9 @@ for i=1:numel(idx_list)
     sbeta_best_rec(i) = dattmp.sbeta_best_*log(2);
     xborder_rec(i,:) = dattmp.xborder(1,dattmp.fea,dattmp.nc,1:3);
 end
+beta_best_rec = round(beta_best_rec/0.5)*0.5;
+sbeta_best_rec = round(sbeta_best_rec/0.5)*0.5;
+
 %close all;
 % Make label:
 DatasetLabel = {dattmp.dtset(idx_list).label};
@@ -41,14 +44,14 @@ subplot(122);
 errorbar(xborder_rec(:,1),beta_best_rec,sbeta_best_rec,sbeta_best_rec,(xborder_rec(:,3)-xborder_rec(:,2))/2,(xborder_rec(:,3)-xborder_rec(:,2))/2,'Marker','.','LineStyle','none');
 ylim([3 14]);
 %% Make specific figure compare between Ebcd1 and dBcd
-x=categorical({'BcdE1';'dbcd';});
+x={'dbcd';'bcdE1';};
 
-y = reshape(beta_best_rec,[2 numel(beta_best_rec)/2])';
-errorplus = reshape(sbeta_best_rec,[2 numel(beta_best_rec)/2]);
+y = reshape(beta_best_rec,[numel(beta_best_rec)/2 2])';
+errorplus = reshape(sbeta_best_rec,[numel(beta_best_rec)/2 2]);
 errorminus=errorplus;
 
 figure;
-bar(x,y);
+bar(categorical(x),y);
 hBar = bar(y, 0.8);                                                  
 for k1 = 1:size(y,2)
     ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
