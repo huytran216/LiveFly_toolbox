@@ -6,17 +6,19 @@
 %   Run the script
 %% Load 
 load('../../Data analysis/feature_label.mat');
+datafilename = 'hb-vk33.mat';
+load(['../../Data analysis/final_dataset/' datafilename],'datamat','DatasetFeature');
+
 %% Define the plot parameters:
 cycle_m=12;             % Cycle of the mother cell.
                         % Cycle of daughter will be cycle_m+1
-        
 align_border=0;         % Align the border or not
 
-fea_m_range=[1];      % Range of daughter feature to be compared - see feature label for reference
-fea_d_range=[1];      % Range of mother feature to be compared - see feature label for reference
+fea_m_range=[9];      % Range of daughter feature to be compared - see feature label for reference
+fea_d_range=[9];      % Range of mother feature to be compared - see feature label for reference
 %% Determine the samples for the question and features to look at
-wd=10;               % Set width of the scanning windows
-pos_start=[-25];
+wd=3;               % Set width of the scanning windows
+pos_start=[-25:20];
 question=1;         % Type of question to ask
     % Question 1. How to I look like my mother?
     % Question 2. How does my (better) daughter resemble me?
@@ -56,7 +58,7 @@ for fea_m=fea_m_range
                 id22=id22(tmp);
                 fea21=arrayfun(@(x) subindex(datamat(x).Feature,fea_d),id21);
                 fea22=arrayfun(@(x) subindex(datamat(x).Feature,fea_d),id22);
-                id2=[id21;id22];    
+                id2=[id21;id22];
                 order=(fea21>=fea22)+1;
                 id2=arrayfun(@(x) id2(order(x),x),1:numel(order));
             case 3 % Question 3. How does my (worse) daughter resemble me?
