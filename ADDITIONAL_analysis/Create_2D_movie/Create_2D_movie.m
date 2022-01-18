@@ -29,7 +29,6 @@ filename=[ConfigName(1:end-9) '_fixed.txt'];
 if ~exist(fullfile(headfolder,mov_folder,'table_summary',filename),'file')
     filename=[ConfigName(1:end-9) '.txt'];
 end
-
 %% Create interested frame:
 matdata = dlmread(fullfile(headfolder,mov_folder,'table_summary',filename));
 fr_range_=[];

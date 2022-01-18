@@ -16,6 +16,8 @@ function newpath_ = alternative_path(fullpath)
     newpath = ...
         {'D:\Users\HuyT\Dropox_curie\Dropbox (UMR3664)\Data\RAW',...    % Huy home computer
         'E:\Dropbox Curie\Dropbox (UMR3664)\Data\RAW',...               % Huy work computer
+        'C:\Users\bvhutr\Dropbox (UMR3664)\Data\RAW',...                % Huy TUNI computer
+        'C:\Users\bvhutr\Dropbox (UMR3664)\backup\Memory_analysis\Mounia data\RAW', ... Mounia data
         };
     newpath_ = fullpath;
     for i=1:numel(newpath)

@@ -107,8 +107,9 @@ function [Irec,AdjustedIntensity,trec,Adjustedtime,fearec,x,y,z,xrec,yrec,zrec,s
     BG=BG(BG>0);
     BGsigma = sqrt(var(BG));
     BG = mean(BG);
-    % Remove spots with weak intensity
-    datamat(datamat(:,25)<=2*BGsigma,[20:30])=0;
+    % Remove spots with weak intensity by comparing background with peak intensity
+    BGcoeff = 0.6;  % Correction for Gaussian kernel
+    datamat(datamat(:,25)<=2*BGsigma/BGcoeff,20:30)=0;
     % Nuclei with out of bound spot is set to 0:
 %% Flip the x value if A pole is 1
     if (xlen~=datamat(1,14))&&(ylen~=datamat(1,15))

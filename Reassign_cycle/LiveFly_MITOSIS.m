@@ -2,8 +2,9 @@ function []=LiveFly_MITOSIS(mov_folder,find_nuclei_z_position,automatic_flag)
     addpath('..\Tool\bfmatlab\');
     if nargin==0
         mov_folder = clipboard('paste');
-        if ~findstr(mov_folder,'table_summary')
-            mov_folder='\\isiserver.curie.net\umr3664\equipe_dostatni\g_fernandes\RAW\190424_GF2\table_summary\';               %indicate the full path movies file
+        if strfind(mov_folder,'table_summary')
+        else
+            mov_folder='C:\Users\bvhutr\Dropbox (UMR3664)\backup\Memory_analysis\Mounia data\RAW\mov2\table_summary';               %indicate the full path movies file
         end
         find_nuclei_z_position = 1;
         automatic_flag = true;
@@ -58,7 +59,7 @@ function []=LiveFly_MITOSIS(mov_folder,find_nuclei_z_position,automatic_flag)
         % Default: [50 30 70]
         patch_before=150;   % Roughly equal first spot appearance (in second)
         patch_after=150;    % Roughly equal last spot till mitosis (in second)
-        min_percent=70;     % Minimum trace length/interphase duration to consider for correction (in %). Must be greater than 50.
+        min_percent=80;     % Minimum trace length/interphase duration to consider for correction (in %). Must be greater than 50.
     %% Run the analysis
     [datamat,outfile]=reassign_cycle(nuc,dt,x_resolution,drift_thresh,[patch_before patch_after min_percent],cycle_range);
     

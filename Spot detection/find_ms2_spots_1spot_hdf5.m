@@ -1,0 +1,268 @@
+function [detected_spot,Ispot,raw2d]=find_ms2_spots_1spot(ms2_mov,channel,it,nuc,th,z_max,voxels_min,voxels_max,fact_r,window,averaging_radius)
+% Replace v_frame with nuc, at frame it.
+% The use of r (rnuc) should be obsolete
+% Input:
+%       -reader: reader handle of the main movie file
+%       -it: frame to analyze
+%       -nuc: nuclei information (from Mathieu tool)
+%       -th: threshold for spot detection
+%       -z_max: number of z stack
+%       -voxels_min: minimum spot volume
+%       -fact_r: tolerence of spot position (outside nuclei mask)
+%       -window: size of the cube around the spot to do gaussian fitting
+%       -avaraging radius:
+
+% Read the first frame and extract the image size
+nbit = 16; % 16bit images
+Irec = uint8(h5read(ms2_mov,['/t' num2str(it-1) '/channel' num2str(channel)])/2^(nbit-8));
+
+Lx=size(Irec,1);
+Ly=size(Irec,2);
+I3=zeros(size(Irec,1),size(Irec,2),z_max);
+raw3=zeros(size(Irec,1),size(Irec,2),z_max);
+filtered3=zeros(size(Irec,1),size(Irec,2),z_max);
+
+Ispot=zeros(size(Irec,1),size(Irec,2));
+
+
+clear detected_spot;
+detected_spot=struct('id_n',[],'id_s',[],'x',[],'y',[],'z',[],'size',[],'I',[],'A',[],'ssx',[],'ssy',[],'I2d',[],'bkg',[],'resid',[]);
+%% Get the maximum projection above background
+    h = fspecial('average', averaging_radius);
+    if any(th==0)
+        figure('Name','Press Left/Arrow to navigate. Enter to exit');        
+        Imax=max(Irec,[],3);
+        Imax=imfilter(Imax,h);
+        Imax=Imax-medfilt2(Imax, [averaging_radius*4 averaging_radius*4]);% Background intensity
+    end
+%% Try spot detection on the 3D
+    % Press left and right to increase decrease zs
+    % Press esc to escape debug
+    zs=1;
+    zscrrmax=0;
+    
+    if any(th==0)
+        esc=0;      % Still in debug mode
+    else
+        esc=1;      % Not in debug mode
+    end
+    
+    % Define the median filter
+    f = @(x) medfilt2(x, [averaging_radius*4 averaging_radius*4]);
+    
+    while (zs<=z_max)
+        I = Irec(:,:,zs);
+
+        F=imfilter(I,h);
+        
+        if exist('ax1','var')
+            xl=get(gca,'xlim');
+            yl=get(gca,'ylim');
+        end
+
+        % Use a median filter
+        if any(th==0)
+            Fbg=medfilt2(F, [averaging_radius*4 averaging_radius*4]);% Background intensity
+        else
+            mask=F>th(1);
+            if any(mask(:))
+                %Fbg=roifilt2(F,mask,f);  % Quicker median filter
+                Fbg=roifilt2_median(F, mask, [averaging_radius*4 averaging_radius*4]);% Background intensity
+            else
+                Fbg=F;
+            end
+        end
+        F_ = (F-Fbg);
+        raw3(:,:,zs)=F_;
+        filtered3(:,:,zs)=F_;
+        
+        if any(th==0)
+            ax1=subplot(3,2,1:2);
+            imagesc(F);
+            colorbar;
+            title(['Original image (th1). z=' num2str(zs)]);
+            ax2=subplot(3,2,3:4);
+            imagesc(F_);
+            colorbar;
+            title(['Filtered image (th2). z=' num2str(zs)]);
+            ax3=subplot(3,2,5:6);
+            imagesc(Imax);
+            colorbar;
+            title('Maximum projection');
+            linkaxes([ax1,ax2,ax3],'xy');
+            if exist('yl','var')
+                xlim(xl);
+                ylim(yl);
+            end
+            I3(:,:,zs)=F*0;
+        else
+            I3(:,:,zs)=(F>th(1))&(F_>th(2));
+        end
+        
+        % Get the latest frame
+        zscrrmax=max([zs,zscrrmax]);
+        
+        % Get zs from keypress
+        if ~esc
+            validkey=false;
+            while ~validkey
+                %disp('waiting');
+                if waitforbuttonpress
+                    %disp('pressed');
+                    hitkey = double(get(gcf,'CurrentCharacter'));
+                    switch hitkey
+                        case 28 % Left arrow > go next
+                            zs=zs-1;
+                            if zs<1
+                                zs=1;
+                            end
+                            validkey=true;
+                        case 29 % Right arrow > go next
+                            zs=zs+1;
+                            if zs>z_max
+                                zs=z_max;
+                            end
+                            validkey=true;
+                        case 13  % Enter > Go forward
+                            esc=1;
+                            validkey=true;
+                    end
+                end
+            end
+        end
+        % If continue
+        if esc
+            if any(th==0)
+                return;
+            else
+                zs=zscrrmax+1;
+            end
+        end
+    end
+%% Labeling the spot intensity
+    L3D=bwlabeln(I3,8);                         % Label the spots 3D image
+    loc3 = regionprops(L3D,'Area','Centroid');  % Extract the region property
+    no=max(max(max(L3D)));                      % Number of spot detected
+    raw2d=max(raw3,[],3);
+    if numel(loc3)>500
+        disp([num2str(numel(loc3)) ' spot initially detected. Considering increasing threshold value']);
+    else
+        disp([num2str(numel(loc3)) ' spot initially detected']);
+    end
+%% Eliminate the clusters too far from the nuclei centres
+    inner_clusters=[];
+    d=1e5*ones(no,size(nuc.frames,1));
+    for i=1:no
+        goodspot=false;
+        for j=1:size(nuc.frames,1)
+            if nuc.frames(j,it)
+                dx=loc3(i).Centroid(1)-nuc.x(j,it);
+                dy=loc3(i).Centroid(2)-nuc.y(j,it);
+                d(i,j)=sqrt( dx^2 +dy^2 );
+                if d(i,j)<nuc.radius(j,it)*fact_r  % If found a near nuclei
+                    goodspot=true;
+                end
+            end
+        end
+        if goodspot
+            inner_clusters=[inner_clusters i];
+        end
+    end
+    %% eliminate the ones that are smaller than a certain number of voxels
+    count_bigger_clusters=0;
+    if numel(inner_clusters)
+        clear bigger_clusters_tmp;
+        bigger_clusters_tmp=find(([loc3(inner_clusters(:)).Area]>=voxels_min)&([loc3(inner_clusters(:)).Area]<=voxels_max));
+        clear bigger_clusters;
+        bigger_clusters=inner_clusters(bigger_clusters_tmp(:));
+        if isempty(bigger_clusters)==0
+            count_bigger_clusters=size(bigger_clusters,2);
+        end
+    end
+    
+    %%  For the survived clusters compute the total intensity
+    if count_bigger_clusters>0 
+        LL3D=zeros(size(Irec,1),size(Irec,2),z_max);
+        Itot=zeros(size(bigger_clusters,2),1);
+        %for i=1:size(inner_clusters,2)
+        for i=1:size(bigger_clusters,2)
+            ind=bigger_clusters(i);
+            %ind=inner_clusters(i);
+            ii=(L3D(:)==ind);
+            LL3D(ii)=ind;
+            loc3(ind).Area
+            %Itot(i)=sum(raw3(ii));
+            Itot(i)=sum(filtered3(ii));
+        end
+        Itot(Itot<0)=0;
+        Ispot=max(LL3D,[],3);
+        %%  assign spots to nuclei
+        %%%%%%%%%%%%%%%%%%###############################################
+
+        %% Attribute nuclei to spots
+        assigned_nucleus=zeros(size(nuc.frames,1),1);
+        assigned_spot=zeros(size(bigger_clusters,2),1);
+        count_spot=zeros(size(nuc.frames,1),1);
+        for i=1:size(bigger_clusters,2)
+            ind=bigger_clusters(i);
+            [mindist,j]=min(d(ind,:));
+            count_spot(j)=count_spot(j)+1;
+            i_spot(j,count_spot(j))=i;
+            dmin(bigger_clusters(i))=mindist;
+        end
+       %% Attribute spots to nuclei
+        for j=1:size(nuc.frames,1)
+            nu=nuc.ind(j,it);
+            if count_spot(j)==1
+                if nu>0
+                    ind=bigger_clusters(i_spot(j,1));
+                    assigned_nucleus(j)=ind;
+                    assigned_spot(i_spot(j,1))=j;
+                end
+            end
+            if count_spot(j)>1
+                clear vtmp;
+                vtmp=[Itot( i_spot(j,1:count_spot(j)) )];
+                max_s=max(vtmp);
+                max_is=find(vtmp==max_s(1));
+                ispot=i_spot(j,max_is(1));
+                ind=bigger_clusters(ispot);
+                if nu>0 
+                    assigned_nucleus(j)=ind;
+                    assigned_spot(ispot)=j;
+                end
+            end
+        end
+        %%  fill the vector detected_spot 
+        ind_spot=0;
+        for i=1:size(bigger_clusters,2)
+            ind=bigger_clusters(i);
+            inuc=assigned_spot(i); %temporary index of nucleus
+            if inuc>0
+                nu=nuc.ind(inuc,it);
+                if nu>0
+                    %fprintf(1,'---- spot %d  belong to nucleus %d  at distance  %g\n',bigger_clusters(i),nu,d(bigger_clusters(i),inuc));
+                    ind_spot=ind_spot+1;    
+                    detected_spot.id_n(ind_spot)=nu;
+                    detected_spot.id_s(ind_spot)=ind;
+                    detected_spot.x(ind_spot)=loc3(ind).Centroid(1);
+                    detected_spot.y(ind_spot)=loc3(ind).Centroid(2);
+                    detected_spot.z(ind_spot)=loc3(ind).Centroid(3);
+                    detected_spot.size(ind_spot)=loc3(ind).Area;
+                    detected_spot.I(ind_spot)=Itot(i);   %the index i is not a mistake, it must be i and not ind
+                    detected_spot.dist(ind_spot)=dmin(ind);
+                    
+                    % do the gaussian fit for each spot - not verified yet
+                    [A,sx,sy,II2d,bk,res] = do_fit_gauss_2d_spot_projection_hdf5(Irec,channel,it,loc3(ind).Centroid(1),loc3(ind).Centroid(2),loc3(ind).Centroid(3),z_max,Lx,Ly,window);
+                    detected_spot.A(ind_spot)=A;
+                    detected_spot.ssx(ind_spot)=sx;
+                    detected_spot.ssy(ind_spot)=sy;
+                    detected_spot.I2d(ind_spot)=II2d;
+                    detected_spot.bkg(ind_spot)=bk;
+                    detected_spot.resid(ind_spot)=res;
+                end
+            end
+        end
+    end
+    fprintf(1,'%d spot(s) found',count_bigger_clusters);
+end

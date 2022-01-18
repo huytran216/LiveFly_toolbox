@@ -12,7 +12,7 @@ function [I,Ibg,pval]=randmi(A,B,varargin)
 %   jfd, 15-11-2006
 %        01-09-2009, added case of non-double images
 %        24-08-2011, speed improvements by Andrew Hill
-itrmax=200;
+itrmax=1; % Set to 200 for better bootstrap. Set to 1 to ignore
 I=mi(A,B);
 for itr=1:itrmax
     Ibg(itr)=mi(A(randperm(numel(A))),B);

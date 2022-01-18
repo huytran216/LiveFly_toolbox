@@ -207,8 +207,10 @@ cycle_range=[];
                         % Scale tlower and tupper by their relative tinterphase
                         for j=1:Nembryo
                             if numel(heatmapI(i).tphase)>=j
-                                tlower(j,numel(cycle_range))=tlower(j,numel(cycle_range))*heatmapI(i).tphase(j)/heatmapI(i).mtphase;
-                                tupper(j,numel(cycle_range))=tupper(j,numel(cycle_range))*heatmapI(i).tphase(j)/heatmapI(i).mtphase;
+                                if i<6 % Only do this with nc<14
+                                    tlower(j,numel(cycle_range))=tlower(j,numel(cycle_range))*heatmapI(i).tphase(j)/heatmapI(i).mtphase;
+                                    tupper(j,numel(cycle_range))=tupper(j,numel(cycle_range))*heatmapI(i).tphase(j)/heatmapI(i).mtphase;
+                                end
                             end
                         end
                     end

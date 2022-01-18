@@ -23,10 +23,14 @@ function [datamat,DatasetList]=local_extract(DatasetList)
         DatasetList(idx).APole=APole;
         DatasetList(idx).ShiftL=ShiftL;
         DatasetList(idx).ShiftR=ShiftR;
-        id=id+cnt;
-        mother(mother>0)=mother(mother>0)+cnt;
-        daughter1(daughter1>0)=daughter1(daughter1>0)+cnt;
-        daughter2(daughter2>0)=daughter2(daughter2>0)+cnt;
+        maxcnt = max([datamat(:).id]);
+        if ~numel(maxcnt)
+            maxcnt = 0;
+        end
+        id=id+maxcnt;
+        mother(mother>0)=mother(mother>0)+maxcnt;
+        daughter1(daughter1>0)=daughter1(daughter1>0)+maxcnt;
+        daughter2(daughter2>0)=daughter2(daughter2>0)+maxcnt;
         tscnt=idx*ones(size(id));
         cnt0=0;
         for i=1:numel(id)
@@ -42,7 +46,7 @@ function [datamat,DatasetList]=local_extract(DatasetList)
                 datamat(cnt+cnt0).AdjustedIntensity=Itmp2{i};      % nuclei's adjusted spot intensity
                 datamat(cnt+cnt0).Adjustedtime=trec2{i};           % time corresponding to intensity
                 datamat(cnt+cnt0).Feature=fea{i};                  % extracted features
-                datamat(cnt+cnt0).Feature_store=fea{i};            % extracted features
+                datamat(cnt+cnt0).Feature_store=fea{i};            % extracted features (always untrimmed)
                 datamat(cnt+cnt0).x=x(i)+shift_EL(idx)/100;        % nuclei position (mean position along AP axis)
                 datamat(cnt+cnt0).y=y(i);                          % nuclei position (mean position along Y axis)
                 datamat(cnt+cnt0).z=z(i);                          % nuclei position (position over time)

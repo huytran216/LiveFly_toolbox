@@ -149,7 +149,7 @@ function [res,x,time]=extract_feature(x,time,threshold,dt,Imax,censored,trange,z
                 if tmp2
                     res(6)=tmp2;
                 else
-                    res(6)=length(x);
+                    res(6)=NaN;
                 end
         % Brightest spot intensity
                 res(7)=max(x);

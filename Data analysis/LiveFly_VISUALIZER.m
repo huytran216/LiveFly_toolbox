@@ -890,7 +890,7 @@ set(segfigure,'Visible','on');
     
     function hindi_traces_Callback(~,~)
         Outtext={'ID from:','ID to','Pos from (%):','Pos to (%)','Only ON trace?:','Maximum Intensity'};
-        Deftext={'0','10000','-50','50','0','30'};
+        Deftext={'0','10000','-35','-25','0','30'};
         dlg=inputdlg(Outtext,'Show trace value (s)',[1 50],Deftext);
         
         new_nc_range=find(arrayfun(@(x) getfield(DatasetList(crrrow),['nc' num2str(x)]),nc_range));
@@ -910,11 +910,12 @@ set(segfigure,'Visible','on');
                 msgbox(['Too more than 80 traces in cc' num2str(cycleno) '. Please narrow the criteria']);
             end
             nrow=ceil(numel(idselect)/ncol);
+            % Show traces per subfigure
             figure('Name',['nc' num2str(cycleno)]);
             xmax=0;xmin=0;  % Modifier for time limit (xlim)
             for idx=1:numel(idselect)
                 subplot(nrow,ncol,idx);
-                ax=([datamat(idselect(idx)).Adjustedtime]-min(datamat(idselect(idx)).Adjustedtime)).*[datamat(idselect(idx)).dt];
+                ax=([datamat(idselect(idx)).Adjustedtime]-min(datamat(idselect(idx)).Adjustedtime));
                 plot(ax,[datamat(idselect(idx)).AdjustedIntensity]);
                 set(gca,'YTick',[]);
                 set(gca,'XTick',[]);
@@ -926,6 +927,31 @@ set(segfigure,'Visible','on');
             for idx=1:numel(idselect)
                 subplot(nrow,ncol,idx);
                 xlim([xmin xmax]);
+            end
+            % Show traces as heatmap:
+            figure('Name',['nc' num2str(cycleno)]);
+            tmpIrec =[];
+            for idx=1:numel(idselect)
+                ax=([datamat(idselect(idx)).Adjustedtime]-min(datamat(idselect(idx)).Adjustedtime));
+                ay=[datamat(idselect(idx)).AdjustedIntensity];
+                newax = linspace(0,1100,100);
+                neway = interp1(ax,ay,newax,'linear','extrap');
+                tmpIrec = [tmpIrec,neway(:)];
+            end
+            if numel(tmpIrec)
+                tmpIrec = [tmpIrec,neway(:)];
+                tmpIrec = tmpIrec';
+                surf(newax,1:size(tmpIrec,1),tmpIrec,'LineStyle','none');
+                view(0,90)
+                h = colorbar;
+                colormap hot
+                ylabel(h, 'Spot intensity (a.u)','Rotation',270);
+                h.Label.Position(1) = 3;
+                xlabel('Time (s)');
+                set(gca,'YDir','reverse');
+                set(gca,'YTick',[]);
+                ylim([1 size(tmpIrec,1)]);
+                xlim([1 1100]);
             end
         end
     end
