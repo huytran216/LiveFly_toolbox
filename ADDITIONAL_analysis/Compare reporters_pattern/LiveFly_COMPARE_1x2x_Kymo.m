@@ -44,7 +44,7 @@ dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 if nargin==0
-    compare_list = [2 2 ];isBcd1X=[0 2]; % For hb-B6-H6B6 comparison, 1x2x
+    compare_list = [2 3 12 2 3 12];isBcd1X=[0 0 0 2 2 2];
     % Format: always: compare_list = [2 3 2 3];isBcd1X=[0 0 1 1];
 end
 
@@ -113,6 +113,9 @@ cnt2=0;
 fit_boundary=false;
 plot_boundary = false;
 plot_vertically=false;
+tall =  {};
+hall =  {};
+sall =  {};
 show_kymo;
 %% Plot the curves:
 for nc=nc_range
@@ -474,27 +477,15 @@ end
         ylim([-30 20]);
         zlim([-30 -.1]);
         set(gcf,'Position',[680   675   414   303]);
-        
+    
+    % Find the displacement    
     for modelidx = 1:numel(model_range)
         model = model_range{modelidx};
         beta_best_ = dat(modelidx).beta_best;
         sbeta_best_ = dat(modelidx).sbeta_best;
         dat(modelidx).newfun(beta_best_)
-        [fun_dx, fun_eval] = find_displacement(beta_best_,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,[-35:30],ratio);
-        figure(108)
-        %subplot(121);
-        %plot(ax,fun_eval);
-        subplot(1,3,1);
-        hold on;
-        plot3([-35:30],fun_dx,[-35:30]*0+1000,'LineStyle','--','LineWidth',2,'Display',model);
+        % Find displacement
         [fun_dx, fun_eval] = find_displacement(beta_best_,dat(modelidx).fun,dat(modelidx).y,dat(modelidx).x,pos_range,ratio);
-        subplot(1,3,2);
-        hold on;
-        semilogy(pos_range,fun_eval/fun_eval(1));
-        subplot(1,3,3);
-        hold on;
-        plot(pos_range,fun_dx,'LineStyle','--','LineWidth',2,'Display',model);
-
         for i=1:numel(compare_list)/2
             figure(120+i);
             mItmp = mI_rec{i,1};
@@ -522,10 +513,9 @@ if impose_fit
     for i = 1:numel(compare_list)/2
         figure(40);
         subplot(1,numel(compare_list)/2,i);
-        plot(pos_rec{i,1}-dat(modelidx).beta_best*log(2),mI_rec{i,1},'--k')        
+        plot(pos_rec{i,1}-dat(modelidx).beta_best*log(2),mI_rec{i,1},'--k')
     end
 end
-
 %% Save data:
 if fit_lambda
     mkdir('shift_rec');

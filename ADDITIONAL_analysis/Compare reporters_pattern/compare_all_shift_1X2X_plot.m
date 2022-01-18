@@ -1,10 +1,14 @@
-idx_list = [2 3 1 2 3 1];
-isBcdE1 = [0 0 0 1 1 1];
-nc_list = [13 13 13 13 13 13];
+idx_list = [2 3 12 1 2 3 12 1];
+isBcdE1 = [0 0 0 0 1 1 1 1];
+nc_list = [13 13 13 13 13 13 13 13];
 
 %idx_list = [1 2 3 4 10 12];
 %isBcdE1 = [1 1 1 1 1 1];
 %nc_list = [13 13 13 13 13 13];
+
+%idx_list = [2 12 2 12];
+%isBcdE1 = [0 0 1 1];
+%nc_list = [13 13 13 13];
 
 time_range =0; % Set to 0 if using whole trace
 if time_range==0
@@ -52,7 +56,9 @@ errorminus=errorplus;
 
 figure;
 bar(categorical(x),y);
-hBar = bar(y, 0.8);                                                  
+hBar = bar(y, 0.8);
+ctr = [];
+ydt = [];
 for k1 = 1:size(y,2)
     ctr(k1,:) = bsxfun(@plus, hBar(k1).XData, hBar(k1).XOffset');     
     ydt(k1,:) = hBar(k1).YData;                    
