@@ -75,19 +75,21 @@ for cntfr=1:numel(n_frame)
         %Iout=mean(I(:,:,1:max_projection),3);
     % Create projection %2
         Iout=max(I,[],3);
-        % Save projection
+        % Save projection . color
         Iout=uint8(Iout);
         Ifinal = cat(3,Ifinal,Iout);
     end
     Ifinal = cat(3,Ifinal,Iout*0);
-    
+    Ifinal_ = cat(3,[Ifinal(:,:,1);Ifinal(:,:,3)],...
+        [Ifinal(:,:,3);Ifinal(:,:,2)],...
+        [Ifinal(:,:,3);Ifinal(:,:,3)]);
     % Make label frame:
     Isize = size(Iout);
     t = (frame - n_frame(1))*dt;
     %Ifinal = AddTextToImage(Ifinal,['t=' num2str(round(t),'%d') 's'],[20 Isize(2)-270],[1 1 1],'FontSize',20);
     
     % Save all
-    imwrite(Ifinal,export_movie,'WriteMode',writemode);
+    imwrite(Ifinal_,export_movie,'WriteMode',writemode);
 end
 display('Done');
 tic
