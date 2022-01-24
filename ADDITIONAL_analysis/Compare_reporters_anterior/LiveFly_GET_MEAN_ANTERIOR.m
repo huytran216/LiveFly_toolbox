@@ -28,14 +28,14 @@ dtset(11).filename = 'Z6';  dtset(11).label = 'Z6'; dtset(11).pos_SS=[-32 32];dt
 dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6'; dtset(12).pos_SS=[-32 -22];dtset(12).time_oSS=[0 800];dtset(12).pos_boundary = [4.6 -0.6];
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6'; dtset(13).pos_SS=[-32 -22];dtset(13).time_oSS=[0 800];dtset(13).pos_boundary = [0 0];
 
-compare_list =  [10];                 % For B6-B9-B12 comparison
+compare_list =  [1 2 3 4];                 % For B6-B9-B12 comparison
 
 isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
-nc_range = [11 12 13];                % Interphase duration
+nc_range = [13];                % Interphase duration
 avr = [600 750 1100];           % Mean nc13 duration
 avr_cut =  [450 500 800];           % Mean nc13 duration
-boundary_type = 1;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
+boundary_type = 0;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
 if boundary_type==0
     for i = 1:numel(dtset)
         dtset(i).pos_boundary = -5.2;
@@ -45,11 +45,11 @@ else
         dtset(i).pos_boundary = dtset(i).pos_boundary(boundary_type);
     end
 end
-check_boundary = 1;                   % Scan at the anterior at the boundary
+check_boundary = 0;                   % Scan at the anterior at the boundary or at boundary
     dw = 3; % Set boundary width for analysis of time to reach boundary.
-plot_intensity =3;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity, 3 for ON decision
+plot_intensity =2;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity, 3 for ON decision
 
-only_ON = 0;                          % Apply only to nuclei with ON signals
+only_ON = 1;                          % Apply only to nuclei with ON signals
 nsample_min = 3;                      % Number of sample for calculation  
 fit_decay = 0;
 %% Cook label_list

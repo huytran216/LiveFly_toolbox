@@ -136,7 +136,7 @@ for nc=nc_range
                 stmp_rec{compare_list(i)}=stmp;
                 pos_range_rec{compare_list(i)} = pos_range(flttmp);
         end
-        if compare_list ==[1 2 3 4 10 12]
+        if isequal(compare_list,[1 2 3 4 10 12])
             save(['SS_rec_' num2str(fea) '.mat'],'mtmp_rec','stmp_rec','pos_range_rec');
         end
         % Get legends and correct axis

@@ -42,8 +42,7 @@ dtset(12).filename = 'Z2B6-near';  dtset(12).label = 'Z2B6';
 dtset(13).filename = 'Z7B6-near';  dtset(13).label = 'Z7B6';
 
 if nargin==0
-    %compare_list = [1 2 5 3 7];isBcd1X = [0 0 0 0 0]; % For B6-B9-B12 comparison
-    %compare_list = [1 2 10]; isBcd1X = [0 0 0]; % For hb-B6-H6B6 comparison
+    
     compare_list = [3 3];isBcd1X=[0 2]; % For hb-B6-H6B6 comparison, 1x2x
     %compare_list = [12 12];isBcd1X=[zeros(1,numel(compare_list)/2) ones(1,numel(compare_list)/2)]; % For hb-B6-H6B6 comparison, 1x2x
     %compare_list = [1 8 9]; isBcd1X =[0 0 0 ];% For vk33 vs random insertion
