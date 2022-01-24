@@ -34,8 +34,9 @@ isBcd1X =    zeros(size(compare_list));  % 1 if load Bcd1x , 0 if not
 
 nc_range = [13];                % Interphase duration
 avr = [600 750 1100];           % Mean nc13 duration
-avr_cut =  [450 500 800];           % Mean nc13 duration
-boundary_type = 0;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
+avr_cut =  [450 500 800];       % Mean nc13 duration - remove nuclei w lower intensity
+SS_window = [600 820];          % Steady state window, for nc13 only
+boundary_type = 1;      % Choose boundary position: arbitrary (0), ON (1) and P_Spot (2)
 if boundary_type==0
     for i = 1:numel(dtset)
         dtset(i).pos_boundary = -5.2;
@@ -45,7 +46,7 @@ else
         dtset(i).pos_boundary = dtset(i).pos_boundary(boundary_type);
     end
 end
-check_boundary = 0;                   % Scan at the anterior at the boundary or at boundary
+check_boundary = 0;                   % Scan at the anterior at the boundary
     dw = 3; % Set boundary width for analysis of time to reach boundary.
 plot_intensity =2;                    % 0 for pspot, 1 for loci intensity, 2 for spot intensity, 3 for ON decision
 
@@ -89,7 +90,9 @@ Irec_indi = {};
 T0_rec = {};
 h21=[];
 maxmI = [];
+mI_SS = {};
 for i = 1:numel(compare_list)
+    mI_SS{i} = [];
     Dataset = DatasetFile{i};
     % Load the dataset
     load(fullfile(fld,Dataset),'Nmov','datamat','DatasetFeature','DatasetList','heatmapI');
@@ -111,6 +114,7 @@ for i = 1:numel(compare_list)
         tinterphase(cycleno) = max(heatmapI(cycleno-8).Rel_time);
         time_all={};
         trace_all={};
+        trace_SS={};
         time_all_aligned={};
         trace_all_aligned={};
         
@@ -187,7 +191,10 @@ for i = 1:numel(compare_list)
                     tmax=max(time_all{total},tmax);
                     trace_all{total}=tr;
                     
-                    
+                    % Get the value at steady state
+                    tr_ = tr((time_ax>SS_window(1))&(time_ax<SS_window(2)));
+                    tr_ = tr_(tr_>0);
+                    trace_SS{total} = tr_;
                     
                     if sum(tr>0)==0
                         cntempty=cntempty+1;
@@ -200,7 +207,7 @@ for i = 1:numel(compare_list)
                     %plot(time_ax(tr>=0),tr(tr>=0));hold on;
                 end
             end
-            % Extract mean curve and standard deviation
+            % Extract mean curve and standard deviation            
             Irec=cell(1,tmax);
             for k=1:total
                 for j=1:time_all{k}
@@ -222,6 +229,12 @@ for i = 1:numel(compare_list)
                     sIrec(j)=0;
                     nIrec(j)=0;
                     nIrec_real(j)=0;
+                end
+            end
+            % Some statistics at steady state:
+            if cycleno == 13
+                for k=1:total
+                    mI_SS{i} = [mI_SS{i} mean(trace_SS{k})];
                 end
             end
         end
