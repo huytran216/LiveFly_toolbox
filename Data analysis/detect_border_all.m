@@ -1,10 +1,11 @@
-function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x,y,limit,isplot,fitoption,erroroption)
+function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x,y,limit,isplot,fitoption,erroroption,isfitt0)
     % Detect the border position based on the cell position (x), cell
     % feature (y).
+    % If feature =10 (interphase duration), then Hill coeff = 10;
     % Input:
     %   x: 1xN embryos of cell position
     %   y: 1xN embryos of feature value
-    %   limit: define the value of vborder*2
+    %   limit: define the value of vhat*2
     %   isplot: plot the figure or not
     %   fitoption: options to fit the function
             % fitoption(1): share maximum level
@@ -19,7 +20,7 @@ function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x
     %   xhat: position of the border
     %   hhat: hill coefficient
     %   what: width of the border - from 5% to 95% maximum expression
-    %   vborder: value of intensity at the border (half maximum)
+    %   vhat: value of intensity at the border (half maximum)
     N=numel(x);
     % Find the range of y, and calculate the middle point (border_value)
     
@@ -118,51 +119,68 @@ function [xhat,hhat,what,vhat,CIxhat,CIhhat,CIwhat,CIvhat] = detect_border_all(x
                 fval=fval+sum(abs(y{k}-fitline(x{k},beta([k k+N k+N+1]))).^2);
             end
         end
-    
-    %% Create initial value
+    %% Set value boundary:
+    yrange = [min([y{:}]) max([y{:}])];
+    xrange = [min([x{:}]) max([x{:}])];
+    if ~numel(yrange)
+        yrange = [0 1];
+    end
+    if ~numel(xrange)
+        xrange = [-50 50];
+    end
+    %% Create initial value for sigmoid pattern fitting
     beta0=[];
     beta_lb=[];
     beta_ub=[];
     betaidx=[];
+    % For plateau level of sigmoid function
     if ~fitoption(1)
         betaidx=[betaidx numel(beta0)+(1:N)];
         beta0=[beta0 1*ones(1,N)];
-        beta_ub=[beta_ub 1e10*ones(1,N)];
-        beta_lb=[beta_lb 1e-10*ones(1,N)];
+        beta_ub=[beta_ub yrange(2)*ones(1,N)];
+        beta_lb=[beta_lb yrange(1)*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
         beta0=[beta0 1];
-        beta_ub=[beta_ub 1e10];
-        beta_lb=[beta_lb 1e-10];
+        beta_ub=[beta_ub yrange(2)];
+        beta_lb=[beta_lb yrange(1)];
     end
+    % For boundary position
     if ~fitoption(3)
         betaidx=[betaidx numel(beta0)+(1:N)];
-        beta0=[beta0 -5*ones(1,N)];
-        beta_ub=[beta_ub 50*ones(1,N)];
-        beta_lb=[beta_lb -50*ones(1,N)];
+        beta0=[beta0 mean(xrange)*ones(1,N)];
+        beta_ub=[beta_ub xrange(2)*ones(1,N)];
+        beta_lb=[beta_lb xyrange(1)*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
-        beta0=[beta0 -5];
-        beta_ub=[beta_ub 50];
-        beta_lb=[beta_lb -50];
+        beta0=[beta0 mean(xrange)];
+        beta_ub=[beta_ub xrange(2)];
+        beta_lb=[beta_lb xrange(1)];
     end
+    if ~isfitt0
+        H_ = [-5 -20 -0.1];
+    else
+        H_ = [-20 -21 -19];
+    end
+    % For Hill function
     if ~fitoption(2)
         betaidx=[betaidx numel(beta0)+(1:N)];
-        beta0=[beta0 -5*ones(1,N)];
-        beta_ub=[beta_ub -1e-10*ones(1,N)];
-        beta_lb=[beta_lb -1e2*ones(1,N)];
+        beta0=[beta0 H_(1)*ones(1,N)];
+        beta_ub=[beta_ub H_(3)*ones(1,N)];
+        beta_lb=[beta_lb H_(2)*ones(1,N)];
     else
         betaidx=[betaidx numel(beta0)+ones(1,N)*1];
-        beta0=[beta0 -5];
-        beta_ub=[beta_ub -1e-10];
-        beta_lb=[beta_lb -1e2];
+        beta0=[beta0 H_(1)];
+        beta_ub=[beta_ub H_(3)];
+        beta_lb=[beta_lb H_(2)];
     end
     %% Get function
     fun=@mean;
     setfunname=['fun=@obj' num2str(fitoption(1)) num2str(fitoption(2)) num2str(fitoption(3)) ';'];
     eval(setfunname);
     %% Eval function:
-    [betahat,fhat]=fminsearchbnd(fun,beta0,beta_lb,beta_ub);
+    %[betahat,fhat]=fminsearchbnd(fun,beta0,beta_lb,beta_ub);
+    [betahat,fhat]=fminsearch_global(fun,beta_lb,beta_ub,10);
     %% Extract from betahat:
     vhat=betahat(betaidx(1:N));
     xhat=betahat(betaidx(N+(1:N)));
